@@ -13,8 +13,8 @@ const fs 		 = require('fs');
 const ini 		 = require('ini');
 const auth 		 = require('basic-auth');
 const Big 		 = require('big.js');
-const uuidv4 	 = require('uuid/v4');
-const crypto 	 = require('crypto');
+//const uuidv4 	 = require('uuid/v4');
+//const crypto 	 = require('crypto');
 //const request 	 = require('request');
 const nodemailer = require('nodemailer');
 //const MongoClient = require('mongodb').MongoClient;
@@ -51,6 +51,11 @@ rclient.on('error',function() {
 	error_handle("Error in Redis", 'redisConnection');
 });
 
+
+// for testing
+rclient.del('qslt_lastblock', function(err, reply){});
+
+
 // configure app to use bodyParser()
 // this will let us get the data from a POST
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -80,7 +85,6 @@ router.route('/test')
     		var response = {};
 
 			response.apiurl = await qapi.getApiUrl();
-			//response.blockchain = await qapi.getBlockChain();
 			response.blockchain = await qapi.listBlocks();
 			
 	        res.json(response);
@@ -96,19 +100,69 @@ router.route('/tokens')
 		
 		var message = [];
 
-        res.json(message);
+		(async () => {
+		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			message = await qdb.findDocuments('tokens', {});
+
+			await qdb.close();
+			
+        	res.json(message);
+        
+        })();
 		
     });
 
 router.route('/addresses')
     .get(function(req, res) {
 
+		var limit = 100;
+
+		if (req.query.limit)
+		{
+			limit = parseInt(req.query.limit);
+		}
+
 		updateaccessstats(req);
 		
 		var message = [];
 
-        res.json(message);
+		(async () => {
 		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			message = await qdb.findDocuments('addresses', {});
+
+			await qdb.close();
+			
+        	res.json(message);
+        
+        })();
+        		
+    });
+
+router.route('/address/:addr')
+    .get(function(req, res) {
+
+		var addr = req.params.addr;
+
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			message = await qdb.findDocuments('addresses', {"address": addr});
+
+			await qdb.close();
+			
+        	res.json(message);
+        
+        })();
+        		
     });
 
 router.route('/transactions')
@@ -118,10 +172,66 @@ router.route('/transactions')
 		
 		var message = [];
 
-        res.json(message);
+		(async () => {
+		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			message = await qdb.findDocuments('transactions', {});
+
+			await qdb.close();
+			
+        	res.json(message);
+        
+        })();
+        		
+    });
+
+router.route('/transaction/:txid')
+    .get(function(req, res) {
+
+		var txid = req.params.txid;
+
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			message = await qdb.findDocuments('transactions', {"txid": txid});
+
+			await qdb.close();
+			
+        	res.json(message);
+        
+        })();
+        		
+    });
+
+router.route('/tokensByOwner/:owner')
+    .get(function(req, res) {
+    
+    	var ownerId = req.params.owner;
+
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			message = await qdb.findDocuments('tokens', {"tokenDetails.ownerAddress": ownerId});
+
+			await qdb.close();
+			
+        	res.json(message);
+        
+        })();
 		
     });
-    
+
 router.route('/newblocknotify')
     .get(function(req, res) {
     
@@ -271,32 +381,7 @@ function scanFromBlock(blockheight, reindex)
 		
 		(async () => {
 
-
-			/* TODO:  Move this to qaeSchema */
-
-			var mclient = await qdb.connect();
-			qdb.setClient(mclient);
-				
-			response = await qdb.createIndex('tokens', {"tokenDetails.tokenIdHex": 1}, true);
-			response = await qdb.createIndex('tokens', {"tokenDetails.symbol": 1}, false);
-			response = await qdb.createIndex('tokens', {"tokenDetails.name": 1}, false);
-			response = await qdb.createIndex('tokens', {"tokenDetails.transactionType": 1}, false);
-			response = await qdb.createIndex('tokens', {"type": 1}, false);
-
-			response = await qdb.createIndex('addresses', {"recordId": 1}, true);
-			response = await qdb.createIndex('addresses', {"address": 1}, false);
-			response = await qdb.createIndex('addresses', {"tokenIdHex": 1}, false);
-			response = await qdb.createIndex('addresses', {"isOwner": 1}, false);
-			
-			response = await qdb.createIndex('transactions', {"txid": 1}, true);
-			response = await qdb.createIndex('transactions', {"blockId": 1}, false);
-			response = await qdb.createIndex('transactions', {"blockHeight": 1}, false);
-			response = await qdb.createIndex('transactions', {"tokenDetails.senderAddress": 1}, false);
-			response = await qdb.createIndex('transactions', {"tokenDetails.tokenIdHex": 1}, false);
-			response = await qdb.createIndex('transactions', {"tokenDetails.transactionType": 1}, false);
-			response = await qdb.createIndex('transactions', {"tokenDetails.sendOutput.address": 1}, false);
-
-			await qdb.close();
+			await qae.indexDatabase(qdb);
 			
 			doScan(blockheight);
 
@@ -368,7 +453,7 @@ function doScan(blockheight)
 										var isjson = false;
 							
 										try {
-											JSON.parse(x);
+											JSON.parse(txdata.vendorField);
 											isjson = true;
 										} catch (e) {
 											console.log("VendorField is not JSON");
@@ -376,8 +461,16 @@ function doScan(blockheight)
 							
 										if (isjson === true)
 										{
-								
-											await qae.parseTransaction(txdata);
+											var parsejson = JSON.parse(txdata.vendorField);
+											
+											if (parsejson.qae1)
+											{
+												var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
+												
+
+
+												
+											}
 								
 										}
 							
