@@ -1,0 +1,12 @@
+mongo_connection_string = 'mongodb://localhost:27017'
+mongo_database = 'qreditslt'
+
+redis_port = 6379
+redis_host = '127.0.0.1'
+
+api_port = 9876
+
+initial_height = 2858903
+
+error_from_email = ''
+error_to_email = ''
