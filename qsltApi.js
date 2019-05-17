@@ -54,7 +54,7 @@ rclient.on('error',function() {
 
 // for testing
 rclient.del('qslt_lastblock', function(err, reply){});
-//rclient.set('qslt_lastblock', 2869107, function(err, reply){});
+//rclient.set('qslt_lastblock', 2881038, function(err, reply){});
 
 
 // configure app to use bodyParser()
@@ -384,7 +384,7 @@ function scanFromBlock(blockheight, reindex)
 
 			await qae.indexDatabase(qdb);
 			
-			doScan(blockheight);
+			doSuperScan(blockheight);
 
 		})();
 		
@@ -398,6 +398,7 @@ function scanFromBlock(blockheight, reindex)
 
 }
 
+
 function doSuperScan(blockheight)
 {
 
@@ -407,8 +408,127 @@ function doSuperScan(blockheight)
 
 	console.log('SUPER Scanning from block #' + blockheight + '.....');
 
+	(async () => {
+
+		var currentHeight = await qapi.getBlockHeight();
+    	 
+		console.log('Current Blockchain Height: ' + currentHeight);
+		
+		var checkingblocks = [];
+		
+		var pagecount = 0;
+		var resultcount = 100;
+		while (resultcount > 0)
+		{
+		
+			pagecount++;
+		
+			var bresponse = await qapi.searchBlocks(pagecount, 100, {"height": {"from": scanBlockId, "to": currentHeight }, "numberOfTransactions": {"from": 1}});
+
+//console.log(bresponse.meta);
+
+			resultcount = parseInt(bresponse.meta.count);
+
+			var blocks = bresponse.data;
+		
+			blocks.forEach(function(item) {
+		
+				if (!checkingblocks[item.height])
+					checkingblocks.push(item.height);
+		
+			});
+		
+		}
+		
+		while (parseInt(scanBlockId) <= parseInt(currentHeight))
+		{
+		
+			scanBlockId++;
+			
+			if (checkingblocks.indexOf(scanBlockId) != -1)
+			{
+
+				var bresponse = await qapi.getBlockByHeight(scanBlockId);
+	
+				if (bresponse.data)
+				{
+
+					var blockdata = bresponse.data[0];
+
+					if (blockdata && blockdata.id)
+					{
+
+						var blockidcode = blockdata.id;
+						var blocktranscount = blockdata.transactions;
+						var thisblockheight = blockdata.height;
+			
+						console.log(thisblockheight + ':' + blockidcode);
+
+						if (blocktranscount > 0)
+						{
+				
+							var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
+				
+							if (tresponse.data)
+							{
+				
+								tresponse.data.forEach( (txdata) => {
+						
+									(async () => {
+						
+										if (txdata.vendorField && txdata.vendorField != '')
+										{
+							
+											console.log("txid:" + txdata.id);
+											console.log("vend:" + txdata.vendorField);
+								
+											var isjson = false;
+							
+											try {
+												JSON.parse(txdata.vendorField);
+												isjson = true;
+											} catch (e) {
+												console.log("VendorField is not JSON");
+											}
+							
+											if (isjson === true)
+											{
+												var parsejson = JSON.parse(txdata.vendorField);
+											
+												if (parsejson.qae1)
+												{
+													var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
+												
 
 
+												
+												}
+								
+											}
+							
+										}
+							
+									})();
+							
+								});
+					
+							}
+					
+						}
+				
+						rclient.set('qslt_lastblock', thisblockheight, function(err, reply){});
+
+					}
+
+				}
+
+			}
+		
+		}
+
+		scanLock = false;
+        
+	})();
 
 }
 
@@ -448,7 +568,7 @@ function doScan(blockheight)
 			
 					console.log(thisblockheight + ':' + blockidcode);
 
-					if (blocktranscount > 0)
+					if (parseInt(blocktranscount) > 0)
 					{
 				
 						var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
