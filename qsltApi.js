@@ -54,6 +54,7 @@ rclient.on('error',function() {
 
 // for testing
 rclient.del('qslt_lastblock', function(err, reply){});
+//rclient.set('qslt_lastblock', 2869107, function(err, reply){});
 
 
 // configure app to use bodyParser()
@@ -104,7 +105,7 @@ router.route('/tokens')
 		
 			var mclient = await qdb.connect();
 			qdb.setClient(mclient);
-			message = await qdb.findDocuments('tokens', {});
+			message = await qdb.findDocuments('tokens', {}, 100, {"tokenDetails.genesis_timestamp_unix":-1}, 0);
 
 			await qdb.close();
 			
@@ -176,7 +177,7 @@ router.route('/transactions')
 		
 			var mclient = await qdb.connect();
 			qdb.setClient(mclient);
-			message = await qdb.findDocuments('transactions', {});
+			message = await qdb.findDocuments('transactions', {}, 100, {"transactionDetails.timestamp_unix":-1}, 0);
 
 			await qdb.close();
 			
@@ -396,6 +397,21 @@ function scanFromBlock(blockheight, reindex)
 	}
 
 }
+
+function doSuperScan(blockheight)
+{
+
+	scanLock = true;
+	
+	var scanBlockId = blockheight;
+
+	console.log('SUPER Scanning from block #' + blockheight + '.....');
+
+
+
+
+}
+
 
 function doScan(blockheight)
 {
