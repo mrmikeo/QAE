@@ -11,14 +11,10 @@ const cors 		 = require('cors');
 const redis 	 = require('redis');
 const fs 		 = require('fs');
 const ini 		 = require('ini');
-const auth 		 = require('basic-auth');
+//const auth 		 = require('basic-auth');
 const Big 		 = require('big.js');
-//const uuidv4 	 = require('uuid/v4');
-//const crypto 	 = require('crypto');
-//const request 	 = require('request');
 const nodemailer = require('nodemailer');
-//const MongoClient = require('mongodb').MongoClient;
-//const assert 	 = require('assert');
+
 
 const qreditApi = require("./lib/qreditApi");
 const qapi = new qreditApi.default();
@@ -54,7 +50,7 @@ rclient.on('error',function() {
 
 // for testing
 rclient.del('qslt_lastblock', function(err, reply){});
-//rclient.set('qslt_lastblock', 2881038, function(err, reply){});
+//rclient.set('qslt_lastblock', 2881118, function(err, reply){});
 
 
 // configure app to use bodyParser()
@@ -106,6 +102,29 @@ router.route('/tokens')
 			var mclient = await qdb.connect();
 			qdb.setClient(mclient);
 			message = await qdb.findDocuments('tokens', {}, 100, {"tokenDetails.genesis_timestamp_unix":-1}, 0);
+
+			await qdb.close();
+			
+        	res.json(message);
+        
+        })();
+		
+    });
+
+router.route('/token/:id')
+    .get(function(req, res) {
+
+		var tokenid = req.params.id;
+		
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			message = await qdb.findDocuments('tokens', {'tokenDetails.tokenIdHex': tokenid});
 
 			await qdb.close();
 			
@@ -479,8 +498,8 @@ function doSuperScan(blockheight)
 										if (txdata.vendorField && txdata.vendorField != '')
 										{
 							
-											console.log("txid:" + txdata.id);
-											console.log("vend:" + txdata.vendorField);
+											//console.log("txid:" + txdata.id);
+											//console.log("vend:" + txdata.vendorField);
 								
 											var isjson = false;
 							
@@ -488,7 +507,7 @@ function doSuperScan(blockheight)
 												JSON.parse(txdata.vendorField);
 												isjson = true;
 											} catch (e) {
-												console.log("VendorField is not JSON");
+												console.log("VendorField is not Valid JSON");
 											}
 							
 											if (isjson === true)
@@ -592,7 +611,7 @@ function doScan(blockheight)
 											JSON.parse(txdata.vendorField);
 											isjson = true;
 										} catch (e) {
-											console.log("VendorField is not JSON");
+											//console.log("VendorField is not JSON");
 										}
 							
 										if (isjson === true)
@@ -603,7 +622,8 @@ function doScan(blockheight)
 											{
 												var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
 												
-
+												// Check for errors here
+												
 
 												
 											}
