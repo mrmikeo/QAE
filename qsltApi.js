@@ -14,6 +14,7 @@ const ini 		 = require('ini');
 //const auth 		 = require('basic-auth');
 const Big 		 = require('big.js');
 const nodemailer = require('nodemailer');
+const crypto 	 = require('crypto');
 
 
 const qreditApi = require("./lib/qreditApi");
@@ -49,7 +50,7 @@ rclient.on('error',function() {
 
 
 // for testing
-rclient.del('qslt_lastblock', function(err, reply){});
+//rclient.del('qslt_lastblock', function(err, reply){});
 //rclient.set('qslt_lastblock', 2881118, function(err, reply){});
 
 
@@ -185,6 +186,69 @@ router.route('/address/:addr')
         		
     });
 
+router.route('/addressesByTokenId/:tokenid')
+    .get(function(req, res) {
+
+		var addr = req.params.tokenid;
+
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			message = await qdb.findDocuments('addresses', {"tokenIdHex": tokenid});
+
+			await qdb.close();
+			
+        	res.json(message);
+        
+        })();
+        		
+    });
+    
+router.route('/balance/:tokenid/:address')
+    .get(function(req, res) {
+
+		var addr = req.params.address;
+		var tokenid = req.params.tokenid;
+		
+		updateaccessstats(req);
+		
+		var message = {};
+
+		(async () => {
+		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+
+			var rawRecordId = addr + '.' + tokenid;
+			var recordId = crypto.createHash('md5').update(rawRecordId).digest('hex');
+			
+			message = await qdb.findDocument('addresses', {"recordId": recordId});
+
+			await qdb.close();
+			
+			if (message.tokenBalance)
+			{
+			
+				var humanbal = new Big(message.tokenBalance).div(Big(10).pow(message.tokenDecimals)).toFixed(message.tokenDecimals);
+				res.json(humanbal);
+				
+			}
+			else
+			{
+			
+        		res.json("0");
+        	
+        	}
+        
+        })();
+        		
+    });
+
 router.route('/transactions')
     .get(function(req, res) {
 
@@ -228,6 +292,49 @@ router.route('/transaction/:txid')
         })();
         		
     });
+    
+
+router.route('/transactions/:tokenid/:address')
+    .get(function(req, res) {
+
+		var tokenid = req.params.tokenid;
+		var address = req.params.address;
+
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			
+			var mquery = {
+				$and : 
+				[
+              		{ 
+                 		$or : 
+                 		[ 
+                			{"transactionDetails.senderAddress" : address},
+               				{"transactionDetails.sendOutput.address": address}
+                       ]
+               		},
+               		{ 
+                 		"transactionDetails.tokenIdHex":tokenid
+               		}
+             	]
+    		};
+			
+			message = await qdb.findDocuments('transactions', mquery, 100, {"transactionDetails.timestamp_unix": -1}, 0);
+
+			await qdb.close();
+			
+        	res.json(message);
+        
+        })();
+        		
+    });
+    
 
 router.route('/tokensByOwner/:owner')
     .get(function(req, res) {
@@ -263,6 +370,31 @@ router.route('/newblocknotify')
 
         res.json(message);
     	
+    });
+    
+router.route('/getRingSignature/:height')
+    .get(function(req, res) {
+    
+    	var ownerId = req.params.owner;
+
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+		/*
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			message = await qdb.findDocuments('tokens', {"tokenDetails.ownerAddress": ownerId});
+
+			await qdb.close();
+			
+        	res.json(message);
+        */
+        
+        })();
+		
     });
     
 /////
