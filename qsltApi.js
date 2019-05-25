@@ -51,7 +51,7 @@ rclient.on('error',function() {
 
 // for testing
 rclient.del('qslt_lastblock', function(err, reply){});
-//rclient.set('qslt_lastblock', 2881118, function(err, reply){});
+//rclient.set('qslt_lastblock', 2967100, function(err, reply){});
 
 
 // configure app to use bodyParser()
@@ -223,8 +223,7 @@ router.route('/address/:addr')
 router.route('/addressesByTokenId/:tokenid')
     .get(function(req, res) {
 
-		var addr = req.params.tokenid;
-
+		var tokenid = req.params.tokenid;
 
 		var limit = 100;
 
@@ -789,7 +788,7 @@ function doSuperScan(blockheight)
 												JSON.parse(txdata.vendorField);
 												isjson = true;
 											} catch (e) {
-												console.log("VendorField is not Valid JSON");
+												//console.log("VendorField is not Valid JSON");
 											}
 							
 											if (isjson === true)
@@ -884,8 +883,8 @@ function doScan(blockheight)
 									if (txdata.vendorField && txdata.vendorField != '')
 									{
 							
-										console.log("txid:" + txdata.id);
-										console.log("vend:" + txdata.vendorField);
+										//console.log("txid:" + txdata.id);
+										//console.log("vend:" + txdata.vendorField);
 								
 										var isjson = false;
 							

@@ -33,6 +33,7 @@ Currently the system supports the QAE-1 contract schema.   Additional schemas ca
 
 QAE-1 Contract Methods:
 
+```
 GENESIS - Create a new token
 BURN - Destroy/Burn tokens from a contract
 MINT - Create/Mint tokens into a contract
@@ -40,55 +41,62 @@ SEND - Send tokens from sender address to recipient address
 PAUSE - Pause the contract.  Prevents any calls other than RESUME
 RESUME - Resume the contract.
 NEWOWNER - Change the owner of the contract.
-
+```
 
 JSON Variables:
 
 GENESIS:
 
+```
 de = Decimal Places  (Integer: 0-8)
 sy = Symbol / Ticker  (String: 3-8 characters)
 na = Token Name  (String: 3-24 characters)
-du = Document URI  (String:  Max 32 characters)
+du = Document URI  (String:  Max 32 characters)  (Optional)
 qt = Quantity (Integer)
-no = Notes  (String: Max 32 Characters)
-
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
 
 BURN:
 
+```
 id = tokenIdHex (Hexidecimal)
 qt = Quantity (Integer)
-no = Notes  (String: Max 32 Characters)
-
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
 
 MINT:
 
+```
 id = tokenIdHex (Hexidecimal)
 qt = Quantity (Integer)
-no = Notes  (String: Max 32 Characters)
-
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
 
 SEND:
 
+```
 id = tokenIdHex (Hexidecimal)
 qt = Quantity (Integer)
-no = Notes  (String: Max 32 Characters)
-
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
 
 PAUSE:
 
+```
 id = tokenIdHex (Hexidecimal)
-no = Notes  (String: Max 32 Characters)
-
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
 
 UNPAUSE:
 
+```
 id = tokenIdHex (Hexidecimal)
-no = Notes  (String: Max 32 Characters)
-
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
 
 NEWOWNER:
 
+```
 id = tokenIdHex (Hexidecimal)
-no = Notes  (String: Max 32 Characters)
-
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
