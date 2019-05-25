@@ -50,7 +50,7 @@ rclient.on('error',function() {
 
 
 // for testing
-//rclient.del('qslt_lastblock', function(err, reply){});
+rclient.del('qslt_lastblock', function(err, reply){});
 //rclient.set('qslt_lastblock', 2881118, function(err, reply){});
 
 
@@ -94,6 +94,29 @@ router.route('/test')
 router.route('/tokens')
     .get(function(req, res) {
 
+		var limit = 100;
+
+		if (req.query.limit)
+		{
+			limit = parseInt(req.query.limit);
+		}
+
+		var page = 1;
+
+		if (req.query.page)
+		{
+			page = parseInt(req.query.page);
+		}
+		
+		var skip = (page - 1) * limit;
+
+		var sort = {"tokenDetails.genesis_timestamp_unix":-1};
+		
+		//if (req.query.sort)
+		//{
+		//	sort = parseInt(req.query.sort);
+		//}
+
 		updateaccessstats(req);
 		
 		var message = [];
@@ -102,7 +125,7 @@ router.route('/tokens')
 		
 			var mclient = await qdb.connect();
 			qdb.setClient(mclient);
-			message = await qdb.findDocuments('tokens', {}, 100, {"tokenDetails.genesis_timestamp_unix":-1}, 0);
+			message = await qdb.findDocuments('tokens', {}, limit, sort, skip);
 
 			await qdb.close();
 			
@@ -145,6 +168,17 @@ router.route('/addresses')
 			limit = parseInt(req.query.limit);
 		}
 
+		var page = 1;
+
+		if (req.query.page)
+		{
+			page = parseInt(req.query.page);
+		}
+		
+		var skip = (page - 1) * limit;
+
+		var sort = {};
+
 		updateaccessstats(req);
 		
 		var message = [];
@@ -153,7 +187,7 @@ router.route('/addresses')
 		
 			var mclient = await qdb.connect();
 			qdb.setClient(mclient);
-			message = await qdb.findDocuments('addresses', {});
+			message = await qdb.findDocuments('addresses', {}, limit, sort, skip);
 
 			await qdb.close();
 			
@@ -191,6 +225,25 @@ router.route('/addressesByTokenId/:tokenid')
 
 		var addr = req.params.tokenid;
 
+
+		var limit = 100;
+
+		if (req.query.limit)
+		{
+			limit = parseInt(req.query.limit);
+		}
+
+		var page = 1;
+
+		if (req.query.page)
+		{
+			page = parseInt(req.query.page);
+		}
+		
+		var skip = (page - 1) * limit;
+
+		var sort = {};
+
 		updateaccessstats(req);
 		
 		var message = [];
@@ -199,7 +252,7 @@ router.route('/addressesByTokenId/:tokenid')
 		
 			var mclient = await qdb.connect();
 			qdb.setClient(mclient);
-			message = await qdb.findDocuments('addresses', {"tokenIdHex": tokenid});
+			message = await qdb.findDocuments('addresses', {"tokenIdHex": tokenid}, limit, sort, skip);
 
 			await qdb.close();
 			
@@ -252,6 +305,24 @@ router.route('/balance/:tokenid/:address')
 router.route('/transactions')
     .get(function(req, res) {
 
+		var limit = 100;
+
+		if (req.query.limit)
+		{
+			limit = parseInt(req.query.limit);
+		}
+
+		var page = 1;
+
+		if (req.query.page)
+		{
+			page = parseInt(req.query.page);
+		}
+		
+		var skip = (page - 1) * limit;
+
+		var sort = {"transactionDetails.timestamp_unix":-1};
+		
 		updateaccessstats(req);
 		
 		var message = [];
@@ -260,7 +331,7 @@ router.route('/transactions')
 		
 			var mclient = await qdb.connect();
 			qdb.setClient(mclient);
-			message = await qdb.findDocuments('transactions', {}, 100, {"transactionDetails.timestamp_unix":-1}, 0);
+			message = await qdb.findDocuments('transactions', {}, limit, sort, skip);
 
 			await qdb.close();
 			
@@ -293,13 +364,74 @@ router.route('/transaction/:txid')
         		
     });
     
+router.route('/transactions/:tokenid')
+    .get(function(req, res) {
 
+		var tokenid = req.params.tokenid;
+
+		var limit = 100;
+
+		if (req.query.limit)
+		{
+			limit = parseInt(req.query.limit);
+		}
+
+		var page = 1;
+
+		if (req.query.page)
+		{
+			page = parseInt(req.query.page);
+		}
+		
+		var skip = (page - 1) * limit;
+
+		var sort = {"transactionDetails.timestamp_unix":-1};
+
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			
+			var mquery = {"transactionDetails.tokenIdHex":tokenid};
+			
+			message = await qdb.findDocuments('transactions', mquery, limit, sort, skip);
+
+			await qdb.close();
+			
+        	res.json(message);
+        
+        })();
+        		
+    });
+    
 router.route('/transactions/:tokenid/:address')
     .get(function(req, res) {
 
 		var tokenid = req.params.tokenid;
 		var address = req.params.address;
 
+		var limit = 100;
+
+		if (req.query.limit)
+		{
+			limit = parseInt(req.query.limit);
+		}
+
+		var page = 1;
+
+		if (req.query.page)
+		{
+			page = parseInt(req.query.page);
+		}
+		
+		var skip = (page - 1) * limit;
+
+		var sort = {"transactionDetails.timestamp_unix":-1};
+		
 		updateaccessstats(req);
 		
 		var message = [];
@@ -325,7 +457,7 @@ router.route('/transactions/:tokenid/:address')
              	]
     		};
 			
-			message = await qdb.findDocuments('transactions', mquery, 100, {"transactionDetails.timestamp_unix": -1}, 0);
+			message = await qdb.findDocuments('transactions', mquery, limit, sort, skip);
 
 			await qdb.close();
 			
@@ -341,6 +473,24 @@ router.route('/tokensByOwner/:owner')
     
     	var ownerId = req.params.owner;
 
+		var limit = 100;
+
+		if (req.query.limit)
+		{
+			limit = parseInt(req.query.limit);
+		}
+
+		var page = 1;
+
+		if (req.query.page)
+		{
+			page = parseInt(req.query.page);
+		}
+		
+		var skip = (page - 1) * limit;
+
+		var sort = {};
+		
 		updateaccessstats(req);
 		
 		var message = [];
@@ -349,7 +499,7 @@ router.route('/tokensByOwner/:owner')
 		
 			var mclient = await qdb.connect();
 			qdb.setClient(mclient);
-			message = await qdb.findDocuments('tokens', {"tokenDetails.ownerAddress": ownerId});
+			message = await qdb.findDocuments('tokens', {"tokenDetails.ownerAddress": ownerId}, limit, sort, skip);
 
 			await qdb.close();
 			
@@ -375,7 +525,7 @@ router.route('/newblocknotify')
 router.route('/getRingSignature/:height')
     .get(function(req, res) {
     
-    	var ownerId = req.params.owner;
+    	var keyId = req.params.key;
 
 		updateaccessstats(req);
 		
@@ -422,7 +572,7 @@ var interval = setInterval(function() {
 
 	newblocknotify();
   
-}, 30000);
+}, 10000);
 
 
 function initialize()

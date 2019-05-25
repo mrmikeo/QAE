@@ -51,38 +51,44 @@ sy = Symbol / Ticker  (String: 3-8 characters)
 na = Token Name  (String: 3-24 characters)
 du = Document URI  (String:  Max 32 characters)
 qt = Quantity (Integer)
+no = Notes  (String: Max 32 Characters)
 
 
 BURN:
 
 id = tokenIdHex (Hexidecimal)
 qt = Quantity (Integer)
+no = Notes  (String: Max 32 Characters)
 
 
 MINT:
 
 id = tokenIdHex (Hexidecimal)
 qt = Quantity (Integer)
+no = Notes  (String: Max 32 Characters)
 
 
 SEND:
 
 id = tokenIdHex (Hexidecimal)
 qt = Quantity (Integer)
+no = Notes  (String: Max 32 Characters)
 
 
 PAUSE:
 
 id = tokenIdHex (Hexidecimal)
+no = Notes  (String: Max 32 Characters)
 
 
 UNPAUSE:
 
 id = tokenIdHex (Hexidecimal)
+no = Notes  (String: Max 32 Characters)
 
 
 NEWOWNER:
 
 id = tokenIdHex (Hexidecimal)
-
+no = Notes  (String: Max 32 Characters)
 
