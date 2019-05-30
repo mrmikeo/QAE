@@ -15,6 +15,8 @@ const ini 		 = require('ini');
 const Big 		 = require('big.js');
 const nodemailer = require('nodemailer');
 const crypto 	 = require('crypto');
+const http 		 = require('http');
+const publicIp   = require('public-ip');
 
 
 const qreditApi = require("./lib/qreditApi");
@@ -35,6 +37,11 @@ const rclient = redis.createClient(iniconfig.redis_port, iniconfig.redis_host,{d
 const qaeSchema = require("./lib/qaeSchema");
 const qae = new qaeSchema.default();
 
+var myIPAddress = '';
+var lastBlockId = '';
+var goodPeers = [];
+var badPeers = [];
+
 // for testing
 console.log(qae.getTransactionTypes());
 
@@ -50,8 +57,9 @@ rclient.on('error',function() {
 
 
 // for testing
-rclient.del('qslt_lastblock', function(err, reply){});
-//rclient.set('qslt_lastblock', 2967100, function(err, reply){});
+//rclient.del('qslt_lastblock', function(err, reply){});
+rclient.del('qslt_lastscanblock', function(err, reply){});
+rclient.del('qslt_lastblockid', function(err, reply){});
 
 
 // configure app to use bodyParser()
@@ -70,9 +78,9 @@ var scanLock = false;
 // =============================================================================
 var router = express.Router();              // get an instance of the express Router
 
-// test route to make sure everything is working (accessed at GET http://localhost:8080/api)
+// test route to make sure everything is working (accessed at GET http://ip:port/api)
 router.get('/', function(req, res) {
-    res.json({ message: 'hooray! welcome to our api!' });   
+    res.json({ message: 'Qredit Always Evolving....  Please see our API documentation' });   
 });
 
 router.route('/test')
@@ -569,16 +577,16 @@ initialize();
 // Check every 30 seconds 
 var interval = setInterval(function() {
 
-	newblocknotify();
+	//newblocknotify();
   
-}, 10000);
+}, 30000);
 
 
 function initialize()
 {
 
 	// Check Database
-	rclient.get('qslt_lastblock', function(err, reply)
+	rclient.get('qslt_lastscanblock', function(err, reply)
 	{
 	
 		if (err)
@@ -642,14 +650,31 @@ function initialize()
 					//console.log(response);
 				}
 				
+				
+				var redownload = false;
+				
+				exists = await qdb.doesCollectionExist('blocks');
+				if (exists != true)
+				{
+				
+					redownload = true;
+				
+				}
+
 				await qdb.close();
 				
 				// START THE SERVER
 				// =============================================================================
 				app.listen(port);
 				console.log('Magic happens on Port:' + port);
+
+
+				myIPAddress = await publicIp.v4();
+						
+				console.log("This IP Address is: " + myIPAddress);
+
+				scanBlocks(true, redownload);
 				
-				scanFromBlock(iniconfig.initial_height, true);
         
 			})();
 		
@@ -657,12 +682,20 @@ function initialize()
 		else
 		{
 
-			// START THE SERVER
-			// =============================================================================
-			app.listen(port);
-			console.log('Magic happens on Port:' + port);
-			
-			scanFromBlock(parseInt(reply), false);
+			(async () => {
+
+				// START THE SERVER
+				// =============================================================================
+				app.listen(port);
+				console.log('Magic happens on Port:' + port);
+
+				myIPAddress = await publicIp.v4();
+						
+				console.log("This IP Address is: " + myIPAddress);
+
+				scanBlocks(false, false);
+		
+			})();
 			
 		}
 
@@ -673,7 +706,7 @@ function initialize()
 // Main Functions
 // ==========================
 
-function scanFromBlock(blockheight, reindex)
+function scanBlocks(reindex = false, redownload = false)
 {
 
 	if (reindex == true)
@@ -684,7 +717,7 @@ function scanFromBlock(blockheight, reindex)
 
 			await qae.indexDatabase(qdb);
 			
-			doSuperScan(blockheight);
+			downloadChain(redownload);
 
 		})();
 		
@@ -692,68 +725,170 @@ function scanFromBlock(blockheight, reindex)
 	else
 	{
 	
-		doScan(blockheight);
+		downloadChain(redownload);
 
 	}
 
 }
 
 
-function doSuperScan(blockheight)
+function downloadChain(redownload = false)
 {
 
 	scanLock = true;
 	
-	var scanBlockId = blockheight;
-
-	console.log('SUPER Scanning from block #' + blockheight + '.....');
-
 	(async () => {
+
+		if (redownload == false)
+		{
+
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			message = await qdb.findDocuments('blocks', {}, 1, {"height":-1}, 0);
+
+			await qdb.close();	
+    	
+    		var topHeight = 0;
+    		if (message[0] && message[0].height)
+    		{
+    			var topHeight = message[0].height;
+    			lastBlockId = message[0].id;
+			}
+		
+		}
+		else
+		{
+		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+
+			exists = await qdb.doesCollectionExist('blocks');
+			console.log("Does collection 'blocks' Exist: " + exists);
+			if (exists == true)
+			{
+				console.log("Removing all documents from 'blocks'");
+				response = await qdb.removeDocuments('blocks', {});
+				//console.log(response);
+			}
+			else
+			{
+				console.log("Creating new collection 'blocks'");
+				response = await qdb.createCollection('blocks', {});
+				//console.log(response);
+			}
+	
+			response = await qdb.createIndex('blocks', {"id": 1}, true);
+			response = await qdb.createIndex('blocks', {"height": 1}, false);
+
+			topHeight = 0;
+			
+			await qdb.close();
+		
+		}
+
+		console.log('Downloading chain from block #' + topHeight + '.....');
+		
+		var scanBlockId = topHeight + 1;
 
 		var currentHeight = await qapi.getBlockHeight();
     	 
 		console.log('Current Blockchain Height: ' + currentHeight);
-		
-		var checkingblocks = [];
-		
+				
 		var pagecount = 0;
 		var resultcount = 100;
+		
+		var mclient = await qdb.connect();
+		qdb.setClient(mclient);		
+		
 		while (resultcount > 0)
 		{
 		
 			pagecount++;
 		
-			var bresponse = await qapi.searchBlocks(pagecount, 100, {"height": {"from": scanBlockId, "to": currentHeight }, "numberOfTransactions": {"from": 1}});
+console.log("Downloading: " + (parseInt(scanBlockId) + (pagecount * 1000)));
+		
+			var bresponse = await qapi.searchBlocks(pagecount, 100, {"height": {"from": scanBlockId, "to": currentHeight }});
 
-//console.log(bresponse.meta);
+//console.log(bresponse);
 
 			resultcount = parseInt(bresponse.meta.count);
 
 			var blocks = bresponse.data;
-		
+
 			blocks.forEach(function(item) {
+				
+				(async () => {
+				
+					if (item.height > topHeight) topHeight = item.height;
 		
-				if (!checkingblocks[item.height])
-					checkingblocks.push(item.height);
+					await qdb.insertDocuments('blocks', item);
+					
+				})();
 		
 			});
-		
+			
+			rclient.set('qslt_lastblock', topHeight, function(err, reply){});
+			
 		}
 		
-		while (parseInt(scanBlockId) <= parseInt(currentHeight))
-		{
-		
-			scanBlockId++;
-			
-			if (checkingblocks.indexOf(scanBlockId) != -1)
-			{
+		await qdb.close();
 
-				var bresponse = await qapi.getBlockByHeight(scanBlockId);
+		scanLock = false;
+		
+		doScan();
+        
+	})();
+
+}
+
+
+function doScan()
+{
+
+	scanLock = true;
+	var scanBlockId = 0;
 	
-				if (bresponse.data)
+	rclient.get('qslt_lastscanblock', function(err, reply){
+
+		if (err)
+		{
+			console.log(err);
+		}
+		else if (reply == null || parseInt(reply) != reply)
+		{
+			scanBlockId = 0;
+		}
+		else
+		{
+			scanBlockId = parseInt(reply);
+		}
+		
+		console.log('Scanning from block #' + scanBlockId + '.....');
+
+		(async () => {
+
+			var currentHeight = 0;
+    	 		
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+			message = await qdb.findDocuments('blocks', {}, 1, {"height":-1}, 0);			
+			
+			if (message && message[0].height) currentHeight = message[0].height;
+			
+			console.log('Current Blockchain Height: ' + currentHeight);
+
+			while (parseInt(scanBlockId) <= parseInt(currentHeight))
+			{
+				scanBlockId++;
+						
+				if (scanBlockId%1000 == 0) console.log("Scanning: " + scanBlockId);
+			
+				message = await qdb.findDocument('blocks', {"height": scanBlockId});
+				
+				if (message)
 				{
 
-					var blockdata = bresponse.data[0];
+					var blockdata = message;
 
 					if (blockdata && blockdata.id)
 					{
@@ -761,10 +896,26 @@ function doSuperScan(blockheight)
 						var blockidcode = blockdata.id;
 						var blocktranscount = blockdata.transactions;
 						var thisblockheight = blockdata.height;
-			
-						console.log(thisblockheight + ':' + blockidcode);
+					
+						var previousblockid = blockdata.previous;
 
-						if (blocktranscount > 0)
+						//console.log(previousblockid + ":" + thisblockheight + ':' + blockidcode);
+
+						if (lastBlockId != previousblockid && thisblockheight > 1)
+						{
+					
+							console.log('Error:  Last Block ID is incorrect!  Rescan Required!');
+							rclient.del('qslt_lastblockid', function(err, reply){
+								rclient.del('qslt_lastscanblock', function(err, reply){
+									process.exit(-1);
+								});
+							});
+					
+						}
+
+						lastBlockId = blockidcode;
+
+						if (parseInt(blocktranscount) > 0)
 						{
 				
 							var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
@@ -788,7 +939,7 @@ function doSuperScan(blockheight)
 												JSON.parse(txdata.vendorField);
 												isjson = true;
 											} catch (e) {
-												//console.log("VendorField is not Valid JSON");
+												//console.log("VendorField is not JSON");
 											}
 							
 											if (isjson === true)
@@ -798,10 +949,6 @@ function doSuperScan(blockheight)
 												if (parsejson.qae1)
 												{
 													var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
-												
-
-
-												
 												}
 								
 											}
@@ -816,123 +963,23 @@ function doSuperScan(blockheight)
 					
 						}
 				
-						rclient.set('qslt_lastblock', thisblockheight, function(err, reply){});
-
+						rclient.set('qslt_lastscanblock', thisblockheight, function(err, reply){});
+						rclient.set('qslt_lastblockid', blockidcode, function(err, reply){});
+					
 					}
 
 				}
 
 			}
-		
-		}
-
-		scanLock = false;
+			
+			await qdb.close();
+				
+			scanLock = false;
         
-	})();
-
-}
-
-
-function doScan(blockheight)
-{
-
-	scanLock = true;
+		})();
 	
-	var scanBlockId = blockheight;
 
-	console.log('Scanning from block #' + blockheight + '.....');
-
-	(async () => {
-
-		var currentHeight = await qapi.getBlockHeight();
-    	 
-		console.log('Current Blockchain Height: ' + currentHeight);
-
-		while (parseInt(scanBlockId) <= parseInt(currentHeight))
-		{
-			scanBlockId++;
-			
-			var bresponse = await qapi.getBlockByHeight(scanBlockId);
-	
-			if (bresponse.data)
-			{
-
-				var blockdata = bresponse.data[0];
-
-				if (blockdata && blockdata.id)
-				{
-
-					var blockidcode = blockdata.id;
-					var blocktranscount = blockdata.transactions;
-					var thisblockheight = blockdata.height;
-			
-					console.log(thisblockheight + ':' + blockidcode);
-
-					if (parseInt(blocktranscount) > 0)
-					{
-				
-						var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
-				
-						if (tresponse.data)
-						{
-				
-							tresponse.data.forEach( (txdata) => {
-						
-								(async () => {
-						
-									if (txdata.vendorField && txdata.vendorField != '')
-									{
-							
-										//console.log("txid:" + txdata.id);
-										//console.log("vend:" + txdata.vendorField);
-								
-										var isjson = false;
-							
-										try {
-											JSON.parse(txdata.vendorField);
-											isjson = true;
-										} catch (e) {
-											//console.log("VendorField is not JSON");
-										}
-							
-										if (isjson === true)
-										{
-											var parsejson = JSON.parse(txdata.vendorField);
-											
-											if (parsejson.qae1)
-											{
-												var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
-												
-												// Check for errors here
-												
-
-												
-											}
-								
-										}
-							
-									}
-							
-								})();
-							
-							});
-					
-						}
-					
-					}
-				
-					rclient.set('qslt_lastblock', thisblockheight, function(err, reply){});
-
-				}
-
-			}
-			
-
-		}
-		
-		scanLock = false;
-        
-	})();
+	});
 
 }
 
@@ -940,42 +987,17 @@ function newblocknotify()
 {
 
 	console.log('New Block Notify..');
-	
-	rclient.get('qslt_lastblock', function(err, reply)
-	{
-	
-		if (err)
-		{
-			console.log(err);
-		}
-		else if (reply == null || parseInt(reply) != reply)
-		{
-		
-			if (scanLock == true)
-			{
-				console.log('Scanner already running...');
-			}
-			else
-			{
-				scanFromBlock(iniconfig.initial_height, false);
-			}
-		
-		}
-		else
-		{
 
-			if (scanLock == true)
-			{
-				console.log('Scanner already running...');
-			}
-			else
-			{
-				scanFromBlock(parseInt(reply), false);
-			}
-		
-		}
-		
-	});
+	if (scanLock == true)
+	{
+		console.log('Scanner already running...');
+	}
+	else
+	{
+		scanBlocks(false, false);
+	}
+	
+	return true;
 
 }
 
@@ -1002,8 +1024,7 @@ function updateaccessstats(req) {
 
 function getCallerIP(request) 
 {
-    var ip = request.headers['x-forwarded-for'] ||
-        request.connection.remoteAddress ||
+    var ip = request.connection.remoteAddress ||
         request.socket.remoteAddress ||
         request.connection.socket.remoteAddress;
     ip = ip.split(',')[0];
