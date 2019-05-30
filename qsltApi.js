@@ -1,24 +1,26 @@
 /*
 *
-* QSLT - Version 0.0.1
+* QAE - Version 0.0.1
+*
+* Qredit Always Evolving
 *
 */
 
-const express    = require('express');        // call express
-const app        = express();                 // define our app using express
-const bodyParser = require('body-parser');
-const cors 		 = require('cors');
-const redis 	 = require('redis');
-const fs 		 = require('fs');
-const ini 		 = require('ini');
-//const auth 		 = require('basic-auth');
-const Big 		 = require('big.js');
-const nodemailer = require('nodemailer');
-const crypto 	 = require('crypto');
-const http 		 = require('http');
-const publicIp   = require('public-ip');
+const express    = require('express');        	// call express
+const app        = express();                 	// define our app using express
+const bodyParser = require('body-parser');		// for post calls
+const cors 		 = require('cors');				// Cross Origin stuff
+const redis 	 = require('redis');			// a really fast nosql keystore
+const fs 		 = require('fs');				// so we can read the config ini file from disk
+const ini 		 = require('ini');				// so we can parse the ini files properties
+//const auth 		 = require('basic-auth');	// unsure if this will be used yet
+const Big 		 = require('big.js');			// required unless you want floating point math issues
+const nodemailer = require('nodemailer');		// for sending error reports about this node
+const crypto 	 = require('crypto');			// for creating hashes of things
+//const http 		 = require('http');			// no longer needed
+const publicIp   = require('public-ip');		// a helper to find out what our external IP is.   Needed for generating proper ring signatures
 
-
+// API Library
 const qreditApi = require("./lib/qreditApi");
 const qapi = new qreditApi.default();
 
@@ -28,24 +30,23 @@ var iniconfig = ini.parse(fs.readFileSync('/etc/qslt/qslt.ini', 'utf-8'))
 const mongoconnecturl = iniconfig.mongo_connection_string;
 const mongodatabase = iniconfig.mongo_database;
 
+// MongoDB Library
 const qsltDB = require("./lib/qsltDB");
 const qdb = new qsltDB.default(mongoconnecturl, mongodatabase);
 
+// Connect to Redis
 const rclient = redis.createClient(iniconfig.redis_port, iniconfig.redis_host,{detect_buffers: true});
 
-// QAE-1 Tokens
+// QAE-1 Token Schema
 const qaeSchema = require("./lib/qaeSchema");
 const qae = new qaeSchema.default();
 
+// Declaring defaults
 var myIPAddress = '';
-var lastBlockId = '';
 var goodPeers = [];
 var badPeers = [];
 
-// for testing
-console.log(qae.getTransactionTypes());
-
-
+// Let us know when we connect or have an error with redis
 rclient.on('connect', function() {
     console.log('Connected to Redis');
 });
@@ -56,10 +57,12 @@ rclient.on('error',function() {
 });
 
 
-// for testing
-//rclient.del('qslt_lastblock', function(err, reply){});
-rclient.del('qslt_lastscanblock', function(err, reply){});
-rclient.del('qslt_lastblockid', function(err, reply){});
+
+// for debug testing only
+//rclient.del('qslt_lastscanblock', function(err, reply){});
+//rclient.del('qslt_lastblockid', function(err, reply){});
+//rclient.set('qslt_lastscanblock', 3015912, function(err, reply){});
+//rclient.set('qslt_lastblockid', 'be7429ac221a3d740b5ffbb232825ff17601e3a80df12cebf7e9e9e8d998532a', function(err, reply){});
 
 
 // configure app to use bodyParser()
@@ -68,21 +71,25 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
 
-var port = iniconfig.api_port;        // set our port
+var port = iniconfig.api_port;
 
+// We will keep in memory the ips that connect to us
 var accessstats = [];
 
 var scanLock = false;
 
 // ROUTES FOR OUR API
 // =============================================================================
-var router = express.Router();              // get an instance of the express Router
 
-// test route to make sure everything is working (accessed at GET http://ip:port/api)
+// get an instance of the express Router
+var router = express.Router();              
+
+// a test route to make sure everything is working (accessed at GET http://ip:port/api)
 router.get('/', function(req, res) {
     res.json({ message: 'Qredit Always Evolving....  Please see our API documentation' });   
 });
 
+// ToDo: Remove
 router.route('/test')
     .get(function(req, res) {
     
@@ -91,7 +98,6 @@ router.route('/test')
     		var response = {};
 
 			response.apiurl = await qapi.getApiUrl();
-			response.blockchain = await qapi.listBlocks();
 			
 	        res.json(response);
         
@@ -122,7 +128,7 @@ router.route('/tokens')
 		
 		//if (req.query.sort)
 		//{
-		//	sort = parseInt(req.query.sort);
+		//	sort = req.query.sort;
 		//}
 
 		updateaccessstats(req);
@@ -529,6 +535,18 @@ router.route('/newblocknotify')
     	
     });
     
+router.route('/peerinfo')
+    .get(function(req, res) {
+    
+    	updateaccessstats(req);
+    	
+		var message = {peers: goodPeers};
+
+        res.json(message);
+    	
+    });
+    
+    
 router.route('/getRingSignature/:height')
     .get(function(req, res) {
     
@@ -539,6 +557,19 @@ router.route('/getRingSignature/:height')
 		var message = [];
 
 		(async () => {
+		
+		// Some notes for this
+		// Return values
+		//   IP = this api ip
+		//   Port = this api port
+		//	 Height = block height of the check
+		//   BlockHash = hash of (IP + hash of 10 block ids from this height and lower)
+		//   TokenHash = hash of (IP + hash of 10 most recent created/updated token ids from this height and lower)
+		//	 TransactionHash = hash of (IP + hash of 10 most recent qae transaction ids from this height and lower)
+		//	 AddressHash = hash of (IP + hash of 10 most recent updates of address record ids from this height and lower)
+		
+		// The other machine verifies or rejects by using the same hashing method using the other machines ip.   the hash of the token information is not exposed, only after hashing it with ip is it exposed.
+		
 		
 		/*
 			var mclient = await qdb.connect();
@@ -577,7 +608,7 @@ initialize();
 // Check every 30 seconds 
 var interval = setInterval(function() {
 
-	//newblocknotify();
+	newblocknotify();
   
 }, 30000);
 
@@ -785,7 +816,7 @@ function downloadChain(redownload = false)
 			await qdb.close();
 		
 		}
-
+		
 		console.log('Downloading chain from block #' + topHeight + '.....');
 		
 		var scanBlockId = topHeight + 1;
@@ -805,30 +836,33 @@ function downloadChain(redownload = false)
 		
 			pagecount++;
 		
-console.log("Downloading: " + (parseInt(scanBlockId) + (pagecount * 1000)));
-		
 			var bresponse = await qapi.searchBlocks(pagecount, 100, {"height": {"from": scanBlockId, "to": currentHeight }});
 
 //console.log(bresponse);
 
 			resultcount = parseInt(bresponse.meta.count);
+			
+			if (resultcount > 0)
+			{
 
-			var blocks = bresponse.data;
+console.log("Downloading from " + parseInt(scanBlockId) + " Page " + pagecount);
 
-			blocks.forEach(function(item) {
+				var blocks = bresponse.data;
+
+				blocks.forEach(function(item) {
 				
-				(async () => {
+					(async () => {
 				
-					if (item.height > topHeight) topHeight = item.height;
+						if (item.height > topHeight) topHeight = item.height;
 		
-					await qdb.insertDocuments('blocks', item);
+						await qdb.insertDocuments('blocks', item);
 					
-				})();
+					})();
 		
-			});
+				});
 			
-			rclient.set('qslt_lastblock', topHeight, function(err, reply){});
-			
+			}
+						
 		}
 		
 		await qdb.close();
@@ -847,6 +881,8 @@ function doScan()
 
 	scanLock = true;
 	var scanBlockId = 0;
+	var lastBlockId = '';
+	
 	
 	rclient.get('qslt_lastscanblock', function(err, reply){
 
@@ -863,6 +899,26 @@ function doScan()
 			scanBlockId = parseInt(reply);
 		}
 		
+		//
+		
+	rclient.get('qslt_lastblockid', function(err, replytwo){
+
+		if (err)
+		{
+			console.log(err);
+		}
+		else if (reply == null)
+		{
+			lastBlockId = '';
+		}
+		else
+		{
+			lastBlockId = replytwo;
+		}
+		
+		
+		//
+		
 		console.log('Scanning from block #' + scanBlockId + '.....');
 
 		(async () => {
@@ -877,7 +933,7 @@ function doScan()
 			
 			console.log('Current Blockchain Height: ' + currentHeight);
 
-			while (parseInt(scanBlockId) <= parseInt(currentHeight))
+			while (parseInt(scanBlockId) < parseInt(currentHeight))
 			{
 				scanBlockId++;
 						
@@ -905,6 +961,12 @@ function doScan()
 						{
 					
 							console.log('Error:  Last Block ID is incorrect!  Rescan Required!');
+							
+							console.log("Expected: " + previousblockid);
+							console.log("Received: " + lastBlockId);
+							console.log("ThisBlockHeight: " + thisblockheight);
+							console.log("LastScanBlock: " + scanBlockId);
+							
 							rclient.del('qslt_lastblockid', function(err, reply){
 								rclient.del('qslt_lastscanblock', function(err, reply){
 									process.exit(-1);
@@ -969,6 +1031,18 @@ function doScan()
 					}
 
 				}
+				else
+				{
+				
+					console.log("Block #" + scanBlockId + " not found in database.. Removing any blocks above this height...");
+					
+					response = await qdb.removeDocuments('blocks', {"height": {"$gt": scanBlockId}});
+					
+					console.log("Removed " + response.result.n + " blocks from db.  Start this program again");
+					
+					process.exit(-1);
+				
+				}
 
 			}
 			
@@ -980,6 +1054,10 @@ function doScan()
 	
 
 	});
+	
+	
+	});
+	
 
 }
 
