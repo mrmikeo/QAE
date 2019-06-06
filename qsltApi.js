@@ -18,7 +18,9 @@ const Big 		 = require('big.js');			// required unless you want floating point m
 const nodemailer = require('nodemailer');		// for sending error reports about this node
 const crypto 	 = require('crypto');			// for creating hashes of things
 //const http 		 = require('http');			// no longer needed
+const request 	 = require('request');
 const publicIp   = require('public-ip');		// a helper to find out what our external IP is.   Needed for generating proper ring signatures
+const {promisify} = require('util');
 
 // API Library
 const qreditApi = require("./lib/qreditApi");
@@ -36,6 +38,10 @@ const qdb = new qsltDB.default(mongoconnecturl, mongodatabase);
 
 // Connect to Redis
 const rclient = redis.createClient(iniconfig.redis_port, iniconfig.redis_host,{detect_buffers: true});
+const hgetAsync = promisify(rclient.hget).bind(rclient);
+const hsetAsync = promisify(rclient.hset).bind(rclient);
+const getAsync = promisify(rclient.get).bind(rclient);
+const setAsync = promisify(rclient.set).bind(rclient);
 
 // QAE-1 Token Schema
 const qaeSchema = require("./lib/qaeSchema");
@@ -43,8 +49,11 @@ const qae = new qaeSchema.default();
 
 // Declaring defaults
 var myIPAddress = '';
-var goodPeers = [];
-var badPeers = [];
+var goodPeers = {};
+var badPeers = {};
+var unvalidatedPeers = {};
+
+var seednode = 'https://qae.qredit.cloud/api/';
 
 // Let us know when we connect or have an error with redis
 rclient.on('connect', function() {
@@ -59,8 +68,10 @@ rclient.on('error',function() {
 
 
 // for debug testing only
-//rclient.del('qslt_lastscanblock', function(err, reply){});
-//rclient.del('qslt_lastblockid', function(err, reply){});
+rclient.del('qslt_lastscanblock', function(err, reply){});
+rclient.del('qslt_lastblockid', function(err, reply){});
+rclient.del('ringsignatures', function(err, reply){});
+
 //rclient.set('qslt_lastscanblock', 3015912, function(err, reply){});
 //rclient.set('qslt_lastblockid', 'be7429ac221a3d740b5ffbb232825ff17601e3a80df12cebf7e9e9e8d998532a', function(err, reply){});
 
@@ -77,6 +88,7 @@ var port = iniconfig.api_port;
 var accessstats = [];
 
 var scanLock = false;
+var scanLockTimer = 0;
 
 // ROUTES FOR OUR API
 // =============================================================================
@@ -540,48 +552,88 @@ router.route('/peerinfo')
     
     	updateaccessstats(req);
     	
-		var message = {peers: goodPeers};
+		var message = {goodPeers: goodPeers, badPeers: badPeers, unvalidatedPeers: unvalidatedPeers};
 
         res.json(message);
     	
     });
     
-    
 router.route('/getRingSignature/:height')
     .get(function(req, res) {
     
-    	var keyId = req.params.key;
+    	var height = parseInt(req.params.height);
 
 		updateaccessstats(req);
 		
-		var message = [];
+		var message = {};
 
-		(async () => {
-		
-		// Some notes for this
-		// Return values
-		//   IP = this api ip
-		//   Port = this api port
-		//	 Height = block height of the check
-		//   BlockHash = hash of (IP + hash of 10 block ids from this height and lower)
-		//   TokenHash = hash of (IP + hash of 10 most recent created/updated token ids from this height and lower)
-		//	 TransactionHash = hash of (IP + hash of 10 most recent qae transaction ids from this height and lower)
-		//	 AddressHash = hash of (IP + hash of 10 most recent updates of address record ids from this height and lower)
-		
-		// The other machine verifies or rejects by using the same hashing method using the other machines ip.   the hash of the token information is not exposed, only after hashing it with ip is it exposed.
-		
-		
-		/*
-			var mclient = await qdb.connect();
-			qdb.setClient(mclient);
-			message = await qdb.findDocuments('tokens', {"tokenDetails.ownerAddress": ownerId});
-
-			await qdb.close();
+		rclient.hget('ringsignatures', height, function(err, reply)
+		{
 			
-        	res.json(message);
-        */
+			if (reply)
+			{
+			
+				var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
+
+				message = {ip: myIPAddress, port: port, height: height, ringsignature: ringsignature};
+			
+        		res.json(message);
+        	
+        	}
+        	else
+        	{
+
+				var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
+
+				message = {ip: myIPAddress, port: port, height: height, ringsignature: '', error: 'Signature Not Found'};
+			
+        		res.json(message);
+        	
+        	}
+        	
+        });
+		
+    });
+    
+router.route('/getRingSignature/:height/:callerport')
+    .get(function(req, res) {
+    
+    	var height = parseInt(req.params.height);
+    	var callerport = parseInt(req.params.callerport);
+
+		updateaccessstats(req);
+		
+		var message = {};
+
+		rclient.hget('ringsignatures', height, function(err, reply)
+		{
+			
+			if (reply)
+			{
+			
+				var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
+
+				message = {ip: myIPAddress, port: port, height: height, ringsignature: ringsignature};
+			
+        		res.json(message);
+        	
+        	}
+        	else
+        	{
+
+				var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
+
+				message = {ip: myIPAddress, port: port, height: height, ringsignature: '', error: 'Signature Not Found'};
+			
+        		res.json(message);
+        	
+        	}
+        	
+        });
         
-        })();
+        var ip = getCallerIP(req).toString();
+        
+        validatePeer(ip, callerport);
 		
     });
     
@@ -767,6 +819,7 @@ function downloadChain(redownload = false)
 {
 
 	scanLock = true;
+	scanLockTimer = Math.floor(new Date() / 1000);
 	
 	(async () => {
 
@@ -834,6 +887,8 @@ function downloadChain(redownload = false)
 		while (resultcount > 0)
 		{
 		
+			scanLockTimer = Math.floor(new Date() / 1000);
+		
 			pagecount++;
 		
 			var bresponse = await qapi.searchBlocks(pagecount, 100, {"height": {"from": scanBlockId, "to": currentHeight }});
@@ -868,6 +923,7 @@ console.log("Downloading from " + parseInt(scanBlockId) + " Page " + pagecount);
 		await qdb.close();
 
 		scanLock = false;
+		scanLockTimer = 0;
 		
 		doScan();
         
@@ -880,6 +936,8 @@ function doScan()
 {
 
 	scanLock = true;
+	scanLockTimer = Math.floor(new Date() / 1000);
+	
 	var scanBlockId = 0;
 	var lastBlockId = '';
 	
@@ -901,159 +959,198 @@ function doScan()
 		
 		//
 		
-	rclient.get('qslt_lastblockid', function(err, replytwo){
+		rclient.get('qslt_lastblockid', function(err, replytwo){
 
-		if (err)
-		{
-			console.log(err);
-		}
-		else if (reply == null)
-		{
-			lastBlockId = '';
-		}
-		else
-		{
-			lastBlockId = replytwo;
-		}
-		
-		
-		//
-		
-		console.log('Scanning from block #' + scanBlockId + '.....');
-
-		(async () => {
-
-			var currentHeight = 0;
-    	 		
-			var mclient = await qdb.connect();
-			qdb.setClient(mclient);
-			message = await qdb.findDocuments('blocks', {}, 1, {"height":-1}, 0);			
-			
-			if (message && message[0].height) currentHeight = message[0].height;
-			
-			console.log('Current Blockchain Height: ' + currentHeight);
-
-			while (parseInt(scanBlockId) < parseInt(currentHeight))
+			if (err)
 			{
-				scanBlockId++;
-						
-				if (scanBlockId%1000 == 0) console.log("Scanning: " + scanBlockId);
+				console.log(err);
+			}
+			else if (reply == null)
+			{
+				lastBlockId = '';
+			}
+			else
+			{
+				lastBlockId = replytwo;
+			}
+		
+		
+			//
+		
+			console.log('Scanning from block #' + scanBlockId + '.....');
+
+			(async () => {
+
+				var currentHeight = 0;
+    	 		
+				var mclient = await qdb.connect();
+				qdb.setClient(mclient);
+				message = await qdb.findDocuments('blocks', {}, 1, {"height":-1}, 0);			
 			
-				message = await qdb.findDocument('blocks', {"height": scanBlockId});
-				
-				if (message)
+				if (message && message[0].height) currentHeight = message[0].height;
+			
+				console.log('Current Blockchain Height: ' + currentHeight);
+
+				while (parseInt(scanBlockId) < parseInt(currentHeight))
 				{
-
-					var blockdata = message;
-
-					if (blockdata && blockdata.id)
+			
+					scanLockTimer = Math.floor(new Date() / 1000);
+				
+					scanBlockId++;
+						
+					if (scanBlockId%1000 == 0) console.log("Scanning: " + scanBlockId);
+			
+					message = await qdb.findDocument('blocks', {"height": scanBlockId});
+				
+					if (message)
 					{
 
-						var blockidcode = blockdata.id;
-						var blocktranscount = blockdata.transactions;
-						var thisblockheight = blockdata.height;
-					
-						var previousblockid = blockdata.previous;
+						var blockdata = message;
 
-						//console.log(previousblockid + ":" + thisblockheight + ':' + blockidcode);
-
-						if (lastBlockId != previousblockid && thisblockheight > 1)
+						if (blockdata && blockdata.id)
 						{
-					
-							console.log('Error:  Last Block ID is incorrect!  Rescan Required!');
-							
-							console.log("Expected: " + previousblockid);
-							console.log("Received: " + lastBlockId);
-							console.log("ThisBlockHeight: " + thisblockheight);
-							console.log("LastScanBlock: " + scanBlockId);
-							
-							rclient.del('qslt_lastblockid', function(err, reply){
-								rclient.del('qslt_lastscanblock', function(err, reply){
-									process.exit(-1);
-								});
-							});
-					
-						}
 
-						lastBlockId = blockidcode;
+							var blockidcode = blockdata.id;
+							var blocktranscount = blockdata.transactions;
+							var thisblockheight = blockdata.height;
+					
+							var previousblockid = blockdata.previous;
 
-						if (parseInt(blocktranscount) > 0)
-						{
-				
-							var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
-				
-							if (tresponse.data)
+							//console.log(previousblockid + ":" + thisblockheight + ':' + blockidcode);
+
+							if (lastBlockId != previousblockid && thisblockheight > 1)
 							{
-				
-								tresponse.data.forEach( (txdata) => {
-						
-									(async () => {
-						
-										if (txdata.vendorField && txdata.vendorField != '')
-										{
+					
+								console.log('Error:  Last Block ID is incorrect!  Rescan Required!');
 							
-											//console.log("txid:" + txdata.id);
-											//console.log("vend:" + txdata.vendorField);
-								
-											var isjson = false;
+								console.log("Expected: " + previousblockid);
+								console.log("Received: " + lastBlockId);
+								console.log("ThisBlockHeight: " + thisblockheight);
+								console.log("LastScanBlock: " + scanBlockId);
 							
-											try {
-												JSON.parse(txdata.vendorField);
-												isjson = true;
-											} catch (e) {
-												//console.log("VendorField is not JSON");
-											}
-							
-											if (isjson === true)
-											{
-												var parsejson = JSON.parse(txdata.vendorField);
-											
-												if (parsejson.qae1)
-												{
-													var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
-												}
-								
-											}
-							
-										}
-							
-									})();
-							
+								rclient.del('qslt_lastblockid', function(err, reply){
+									rclient.del('qslt_lastscanblock', function(err, reply){
+										process.exit(-1);
+									});
 								});
 					
 							}
+
+							lastBlockId = blockidcode;
+
+							if (parseInt(blocktranscount) > 0)
+							{
+				
+								var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
+				
+								if (tresponse.data)
+								{
+				
+									tresponse.data.forEach( (txdata) => {
+						
+										(async () => {
+						
+											if (txdata.vendorField && txdata.vendorField != '')
+											{
+							
+												//console.log("txid:" + txdata.id);
+												//console.log("vend:" + txdata.vendorField);
+								
+												var isjson = false;
+							
+												try {
+													JSON.parse(txdata.vendorField);
+													isjson = true;
+												} catch (e) {
+													//console.log("VendorField is not JSON");
+												}
+							
+												if (isjson === true)
+												{
+													var parsejson = JSON.parse(txdata.vendorField);
+											
+													if (parsejson.qae1)
+													{
+														var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
+													}
+								
+												}
+							
+											}
+											
+
+							
+										})();
+							
+									});
+					
+								}
+					
+							}
+							
+							// Do the ring signature hashing stuff here
+											
+							if (thisblockheight > 1)
+							{
+								// Not first block
+								var previoushash = await hgetAsync('ringsignatures', (parseInt(thisblockheight) - 1));
+												
+								var sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
+								var sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"lastUpdatedBlock":-1});
+								var sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"lastUpdatedBlock":-1});
+								var sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
+			
+								var fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
+																								
+								await hsetAsync('ringsignatures', thisblockheight, fullhash);
+																							
+							}
+							else
+							{
+								// First Block
+								var previoushash = '';
+
+								var sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
+								var sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"lastUpdatedBlock":-1});
+								var sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"lastUpdatedBlock":-1});
+								var sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
+			
+								var fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
+												
+								await hsetAsync('ringsignatures', thisblockheight, fullhash);
+											
+							}
+							
+							await setAsync('qslt_lastscanblock', thisblockheight);
+							await setAsync('qslt_lastblockid', blockidcode);
 					
 						}
+
+					}
+					else
+					{
 				
-						rclient.set('qslt_lastscanblock', thisblockheight, function(err, reply){});
-						rclient.set('qslt_lastblockid', blockidcode, function(err, reply){});
+						console.log("Block #" + scanBlockId + " not found in database.. Removing any blocks above this height...");
 					
+						response = await qdb.removeDocuments('blocks', {"height": {"$gt": scanBlockId}});
+					
+						console.log("Removed " + response.result.n + " blocks from db.  Start this program again");
+					
+						process.exit(-1);
+				
 					}
 
 				}
-				else
-				{
-				
-					console.log("Block #" + scanBlockId + " not found in database.. Removing any blocks above this height...");
-					
-					response = await qdb.removeDocuments('blocks', {"height": {"$gt": scanBlockId}});
-					
-					console.log("Removed " + response.result.n + " blocks from db.  Start this program again");
-					
-					process.exit(-1);
-				
-				}
-
-			}
 			
-			await qdb.close();
+				await qdb.close();
 				
-			scanLock = false;
+				scanLock = false;
+				scanLockTimer = 0;
         
-		})();
+			})();
 	
 
-	});
+		});
 	
 	
 	});
@@ -1068,6 +1165,16 @@ function newblocknotify()
 
 	if (scanLock == true)
 	{
+		// TODO:  Check if it is a stale lock
+		var currentUnixTime = Math.floor(new Date() / 1000);
+		if (scanLockTimer < (currentUnixTime - 900))
+		{
+			// force unlock
+			console.log("Forcing scanlock Unlock....");
+			scanLock = false;
+		}
+	
+	
 		console.log('Scanner already running...');
 	}
 	else
@@ -1078,6 +1185,90 @@ function newblocknotify()
 	return true;
 
 }
+
+function validatePeer(ip, port)
+{
+
+	var peerapiurl = ip + ":" + port + "/api";
+	
+	rclient.get('qslt_lastscanblock', function(err, reply)
+	{
+	
+		var blockheight = parseInt(reply);
+
+		rclient.hget('ringsignatures', blockheight, function(err, replytwo)
+		{
+		
+		
+			if (reply)
+			{
+			
+				// This is what the peer hash should be
+			
+				var ringsignature = crypto.createHash('sha256').update(ip + reply).digest('hex');
+
+				request.get(peerapiurl, {json:true}, function (error, response, body) 
+				{
+				
+					if (error)
+					{
+						// An error occurred, cannot validate
+						
+						delete goodPeers.ip;
+						unvalidatedPeers.ip = {port: port};
+						
+					}
+					else
+					{
+						if (body && !body.error && body.ringsignature)
+						{
+						
+							if (body.ringsignature == ringsignature)
+							{
+								// Validated
+								goodPeers.ip = {port: port, height: blockheight};
+							
+							}
+							else
+							{
+							
+								delete goodPeers.ip;
+								badPeers.ip = {port: port, height: blockheight};
+							
+							}
+						
+						}
+						else
+						{
+						
+							// Cannot validate
+							delete goodPeers.ip;
+							unvalidatedPeers.ip = {port: port};
+						
+						}
+					
+					}
+		
+				});
+        	
+        	}
+        	else
+        	{
+
+				// Cannot validate this height
+        	
+        	}
+		
+		
+		
+
+			
+		});
+		
+	});
+
+}
+
 
 // Access Statistics
 // ==========================
