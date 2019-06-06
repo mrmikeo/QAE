@@ -49,11 +49,11 @@ const qae = new qaeSchema.default();
 
 // Declaring defaults
 var myIPAddress = '';
-var goodPeers = {};
-var badPeers = {};
-var unvalidatedPeers = {};
+var goodPeers = [];
+var badPeers = [];
+var unvalidatedPeers = [];
 
-var seednode = 'https://qae.qredit.cloud/api/';
+var seedNode = 'https://qae.qredit.cloud/api/';
 
 // Let us know when we connect or have an error with redis
 rclient.on('connect', function() {
@@ -68,9 +68,9 @@ rclient.on('error',function() {
 
 
 // for debug testing only
-rclient.del('qslt_lastscanblock', function(err, reply){});
-rclient.del('qslt_lastblockid', function(err, reply){});
-rclient.del('ringsignatures', function(err, reply){});
+//rclient.del('qslt_lastscanblock', function(err, reply){});
+//rclient.del('qslt_lastblockid', function(err, reply){});
+//rclient.del('ringsignatures', function(err, reply){});
 
 //rclient.set('qslt_lastscanblock', 3015912, function(err, reply){});
 //rclient.set('qslt_lastblockid', 'be7429ac221a3d740b5ffbb232825ff17601e3a80df12cebf7e9e9e8d998532a', function(err, reply){});
@@ -552,7 +552,9 @@ router.route('/peerinfo')
     
     	updateaccessstats(req);
     	
-		var message = {goodPeers: goodPeers, badPeers: badPeers, unvalidatedPeers: unvalidatedPeers};
+    	var thisPeer = myIPAddress + ":" + port;
+    	
+		var message = {goodPeers: goodPeers, badPeers: badPeers, unvalidatedPeers: unvalidatedPeers, thisPeer: thisPeer};
 
         res.json(message);
     	
@@ -1146,6 +1148,8 @@ function doScan()
 				
 				scanLock = false;
 				scanLockTimer = 0;
+				
+				getSeedPeers();
         
 			})();
 	
@@ -1214,8 +1218,8 @@ function validatePeer(ip, port)
 					{
 						// An error occurred, cannot validate
 						
-						delete goodPeers.ip;
-						unvalidatedPeers.ip = {port: port};
+						delete goodPeers[ip + ":" + port];
+						unvalidatedPeers[ip + ":" + port] = {ip: ip, port: port};
 						
 					}
 					else
@@ -1226,14 +1230,15 @@ function validatePeer(ip, port)
 							if (body.ringsignature == ringsignature)
 							{
 								// Validated
-								goodPeers.ip = {port: port, height: blockheight};
+								goodPeers[ip + ":" + port] = {ip: ip, port: port, height: blockheight};
+								getPeers(ip + ":" + port);
 							
 							}
 							else
 							{
 							
-								delete goodPeers.ip;
-								badPeers.ip = {port: port, height: blockheight};
+								delete goodPeers[ip + ":" + port];
+								badPeers[ip + ":" + port] = {ip: ip, port: port, height: blockheight};
 							
 							}
 						
@@ -1242,8 +1247,8 @@ function validatePeer(ip, port)
 						{
 						
 							// Cannot validate
-							delete goodPeers.ip;
-							unvalidatedPeers.ip = {port: port};
+							delete goodPeers[ip + ":" + port];
+							unvalidatedPeers[ip + ":" + port] = {ip: ip, port: port};
 						
 						}
 					
@@ -1256,15 +1261,138 @@ function validatePeer(ip, port)
         	{
 
 				// Cannot validate this height
-        	
+				delete goodPeers[ip + ":" + port];
+				unvalidatedPeers[ip + ":" + port] = {ip: ip, port: port};
+							
         	}
-		
-		
-		
-
 			
 		});
 		
+	});
+
+}
+
+function getSeedPeers()
+{
+
+	request.get(seedNode + '/peerinfo', {json:true}, function (error, response, body) 
+	{
+				
+		if (error)
+		{
+			// An error occurred, cannot get seed peer info
+						
+		}
+		else
+		{
+		
+			if (body && body.goodPeers)
+			{
+			
+				var remotePeerList = body.goodPeers;
+				
+				Object.keys(remotePeerList).forEach(function(k){
+				
+					if (!goodPeers[k] && !badPeers[k] & !unvalidatedPeers[k])
+					{
+					
+						unvalidatedPeers[k] = remotePeerList[k];
+					
+					}
+				    
+				});
+			
+			}
+			
+			if (body && body.thisPeer)
+			{
+			
+				var peerdetails = body.thisPeer.split(":");
+			
+				if (!goodPeers[k] && !badPeers[k] & !unvalidatedPeers[k])
+				{
+					unvalidatedPeers[body.thisPeer] = {ip: peerdetails[0], port: peerdetails[1]};
+				}
+			
+			}
+		
+		}
+		
+		testPeers();
+		
+	});
+
+}
+
+function getPeers(peerNode)
+{
+
+	request.get(peerNode + '/peerinfo', {json:true}, function (error, response, body) 
+	{
+				
+		if (error)
+		{
+			// An error occurred, cannot get seed peer info
+						
+		}
+		else
+		{
+		
+			if (body && body.goodPeers)
+			{
+			
+				var remotePeerList = body.goodPeers;
+				
+				Object.keys(remotePeerList).forEach(function(k){
+				
+					if (!goodPeers[k] && !badPeers[k] & !unvalidatedPeers[k])
+					{
+					
+						unvalidatedPeers[k] = remotePeerList[k];
+					
+					}
+				    
+				});
+			
+			}
+			
+			if (body && body.thisPeer)
+			{
+			
+				var peerdetails = body.thisPeer.split(":");
+			
+				if (!goodPeers[k] && !badPeers[k] & !unvalidatedPeers[k])
+				{
+					unvalidatedPeers[body.thisPeer] = {ip: peerdetails[0], port: peerdetails[1]};
+				}
+			
+			}
+		
+		}
+		
+	});
+
+}
+
+function testPeers()
+{
+
+	// Test known peers
+	
+	Object.keys(unvalidatedPeers).forEach(function(k){
+				
+		var peerdetails = unvalidatedPeers[k];
+		
+		validatePeer(peerdetails.ip, peerdetails.port);
+					
+	});
+				    
+	Object.keys(goodPeers).forEach(function(k){
+				
+		var peerdetails = goodPeers[k];
+		
+		validatePeer(peerdetails.ip, peerdetails.port);
+					
 	});
 
 }
