@@ -4,6 +4,8 @@
 *
 * Qredit Always Evolving
 *
+* A simplified token management system for the Qredit network
+*
 */
 
 const express    = require('express');        	// call express
@@ -13,11 +15,9 @@ const cors 		 = require('cors');				// Cross Origin stuff
 const redis 	 = require('redis');			// a really fast nosql keystore
 const fs 		 = require('fs');				// so we can read the config ini file from disk
 const ini 		 = require('ini');				// so we can parse the ini files properties
-//const auth 		 = require('basic-auth');	// unsure if this will be used yet
 const Big 		 = require('big.js');			// required unless you want floating point math issues
 const nodemailer = require('nodemailer');		// for sending error reports about this node
 const crypto 	 = require('crypto');			// for creating hashes of things
-//const http 		 = require('http');			// no longer needed
 const request 	 = require('request');
 const publicIp   = require('public-ip');		// a helper to find out what our external IP is.   Needed for generating proper ring signatures
 const {promisify} = require('util');
@@ -1314,7 +1314,12 @@ function getSeedPeers()
 					if (!goodPeers[k] && !badPeers[k] & !unvalidatedPeers[k])
 					{
 					
-						unvalidatedPeers[k] = remotePeerList[k];
+						if (k != myIPAddress + ":" + port)
+						{
+						
+							unvalidatedPeers[k] = remotePeerList[k];
+							
+						}
 					
 					}
 				    
@@ -1327,9 +1332,16 @@ function getSeedPeers()
 			
 				var peerdetails = body.thisPeer.split(":");
 			
-				if (!goodPeers[k] && !badPeers[k] & !unvalidatedPeers[k])
+				if (!goodPeers[body.thisPeer] && !badPeers[body.thisPeer] & !unvalidatedPeers[body.thisPeer])
 				{
-					unvalidatedPeers[body.thisPeer] = {ip: peerdetails[0], port: peerdetails[1]};
+				
+					if (body.thisPeer != myIPAddress + ":" + port)
+					{
+					
+						unvalidatedPeers[body.thisPeer] = {ip: peerdetails[0], port: peerdetails[1]};
+						
+					}
+					
 				}
 			
 			}
@@ -1366,8 +1378,11 @@ function getPeers(peerNode)
 					if (!goodPeers[k] && !badPeers[k] & !unvalidatedPeers[k])
 					{
 					
-						unvalidatedPeers[k] = remotePeerList[k];
-					
+						if (k != myIPAddress + ":" + port)
+						{
+							unvalidatedPeers[k] = remotePeerList[k];
+						}
+
 					}
 				    
 				});
@@ -1379,9 +1394,16 @@ function getPeers(peerNode)
 			
 				var peerdetails = body.thisPeer.split(":");
 			
-				if (!goodPeers[k] && !badPeers[k] & !unvalidatedPeers[k])
+				if (!goodPeers[body.thisPeer] && !badPeers[body.thisPeer] & !unvalidatedPeers[body.thisPeer])
 				{
-					unvalidatedPeers[body.thisPeer] = {ip: peerdetails[0], port: peerdetails[1]};
+				
+					if (body.thisPeer != myIPAddress + ":" + port)
+					{
+					
+						unvalidatedPeers[body.thisPeer] = {ip: peerdetails[0], port: peerdetails[1]};
+						
+					}
+					
 				}
 			
 			}
