@@ -1,11 +1,11 @@
 {
-  "name": "qsltApi",
+  "name": "qaeApi",
   "version": "0.0.1",
-  "description": "This package file is for all the dependencies for the Qredit Simple Ledger Token API",
-  "main": "qsltApi.js",
+  "description": "This package file is for all the dependencies for the Qredit Always Evolving Token API",
+  "main": "qaeApi.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mrmikeo/qslt.git"
+    "url": "git+https://github.com/mrmikeo/qae.git"
   },
   "dependencies": {
     "assert": "^2.0.0",

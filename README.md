@@ -1,5 +1,5 @@
-# QSLT
-Qredit Simple Ledger Tokens
+# QAE
+Qredit Always Evolving Tokens
 
 An API extension for the Qredit network to integrate Simple Token issuance and management
 
@@ -22,9 +22,9 @@ Clone the repository, install pages, set config, and run:
 
 ```
 npm install
-mkdir /etc/qslt/
-cp qslt.ini.example /etc/qslt/qslt.ini
-node qsltApi.js
+mkdir /etc/qae/
+cp qae.ini.example /etc/qae/qae.ini
+node qaeApi.js
 ```
 
 The server runs on the port set in the ini file.

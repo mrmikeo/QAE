@@ -26,15 +26,15 @@ const {promisify} = require('util');
 const qreditApi = require("./lib/qreditApi");
 const qapi = new qreditApi.default();
 
-var iniconfig = ini.parse(fs.readFileSync('/etc/qslt/qslt.ini', 'utf-8'))
+var iniconfig = ini.parse(fs.readFileSync('/etc/qae/qae.ini', 'utf-8'))
 
 // Connection URL
 const mongoconnecturl = iniconfig.mongo_connection_string;
 const mongodatabase = iniconfig.mongo_database;
 
 // MongoDB Library
-const qsltDB = require("./lib/qsltDB");
-const qdb = new qsltDB.default(mongoconnecturl, mongodatabase);
+const qaeDB = require("./lib/qaeDB");
+const qdb = new qaeDB.default(mongoconnecturl, mongodatabase);
 
 // Connect to Redis
 const rclient = redis.createClient(iniconfig.redis_port, iniconfig.redis_host,{detect_buffers: true});
@@ -68,12 +68,12 @@ rclient.on('error',function() {
 
 
 // for debug testing only
-//rclient.del('qslt_lastscanblock', function(err, reply){});
-//rclient.del('qslt_lastblockid', function(err, reply){});
-//rclient.del('ringsignatures', function(err, reply){});
+rclient.del('qae_lastscanblock', function(err, reply){});
+rclient.del('qae_lastblockid', function(err, reply){});
+rclient.del('qae_ringsignatures', function(err, reply){});
 
-//rclient.set('qslt_lastscanblock', 3015912, function(err, reply){});
-//rclient.set('qslt_lastblockid', 'be7429ac221a3d740b5ffbb232825ff17601e3a80df12cebf7e9e9e8d998532a', function(err, reply){});
+//rclient.set('qae_lastscanblock', 3015912, function(err, reply){});
+//rclient.set('qae_lastblockid', 'be7429ac221a3d740b5ffbb232825ff17601e3a80df12cebf7e9e9e8d998532a', function(err, reply){});
 
 
 // configure app to use bodyParser()
@@ -569,7 +569,7 @@ router.route('/getRingSignature/:height')
 		
 		var message = {};
 
-		rclient.hget('ringsignatures', height, function(err, reply)
+		rclient.hget('qae_ringsignatures', height, function(err, reply)
 		{
 			
 			if (reply)
@@ -607,7 +607,7 @@ router.route('/getRingSignature/:height/:callerport')
 		
 		var message = {};
 
-		rclient.hget('ringsignatures', height, function(err, reply)
+		rclient.hget('qae_ringsignatures', height, function(err, reply)
 		{
 			
 			if (reply)
@@ -671,7 +671,7 @@ function initialize()
 {
 
 	// Check Database
-	rclient.get('qslt_lastscanblock', function(err, reply)
+	rclient.get('qae_lastscanblock', function(err, reply)
 	{
 	
 		if (err)
@@ -942,9 +942,16 @@ function doScan()
 	
 	var scanBlockId = 0;
 	var lastBlockId = '';
+	var sigblockhash = '';
+	var sigtokenhash = '';
+	var sigaddrhash = '';
+	var sigtrxhash = '';
+	var previoushash = '';
+	var fullhash = '';
+	var processedItems = false;
 	
 	
-	rclient.get('qslt_lastscanblock', function(err, reply){
+	rclient.get('qae_lastscanblock', function(err, reply){
 
 		if (err)
 		{
@@ -961,7 +968,7 @@ function doScan()
 		
 		//
 		
-		rclient.get('qslt_lastblockid', function(err, replytwo){
+		rclient.get('qae_lastblockid', function(err, replytwo){
 
 			if (err)
 			{
@@ -1030,8 +1037,8 @@ function doScan()
 								console.log("ThisBlockHeight: " + thisblockheight);
 								console.log("LastScanBlock: " + scanBlockId);
 							
-								rclient.del('qslt_lastblockid', function(err, reply){
-									rclient.del('qslt_lastscanblock', function(err, reply){
+								rclient.del('qae_lastblockid', function(err, reply){
+									rclient.del('qae_lastscanblock', function(err, reply){
 										process.exit(-1);
 									});
 								});
@@ -1039,6 +1046,8 @@ function doScan()
 							}
 
 							lastBlockId = blockidcode;
+							
+							processedItems = false;
 
 							if (parseInt(blocktranscount) > 0)
 							{
@@ -1074,6 +1083,8 @@ function doScan()
 													if (parsejson.qae1)
 													{
 														var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
+														
+														processedItems = true;
 													}
 								
 												}
@@ -1095,36 +1106,43 @@ function doScan()
 							if (thisblockheight > 1)
 							{
 								// Not first block
-								var previoushash = await hgetAsync('ringsignatures', (parseInt(thisblockheight) - 1));
+								previoushash = await hgetAsync('qae_ringsignatures', (parseInt(thisblockheight) - 1));
 												
-								var sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
-								var sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"lastUpdatedBlock":-1});
-								var sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"lastUpdatedBlock":-1});
-								var sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
+								if (processedItems == true)
+								{				
+								
+									// Only check if new things were processed
+												
+									sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
+									sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"lastUpdatedBlock":-1});
+									sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"lastUpdatedBlock":-1});
+									sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
 			
-								var fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
+								}
+			
+								fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
 																								
-								await hsetAsync('ringsignatures', thisblockheight, fullhash);
+								await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
 																							
 							}
 							else
 							{
 								// First Block
-								var previoushash = '';
+								previoushash = '';
 
-								var sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
-								var sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"lastUpdatedBlock":-1});
-								var sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"lastUpdatedBlock":-1});
-								var sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
+								sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
+								sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"lastUpdatedBlock":-1});
+								sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"lastUpdatedBlock":-1});
+								sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
 			
-								var fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
+								fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
 												
-								await hsetAsync('ringsignatures', thisblockheight, fullhash);
+								await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
 											
 							}
 							
-							await setAsync('qslt_lastscanblock', thisblockheight);
-							await setAsync('qslt_lastblockid', blockidcode);
+							await setAsync('qae_lastscanblock', thisblockheight);
+							await setAsync('qae_lastblockid', blockidcode);
 					
 						}
 
@@ -1195,12 +1213,12 @@ function validatePeer(ip, port)
 
 	var peerapiurl = ip + ":" + port + "/api";
 	
-	rclient.get('qslt_lastscanblock', function(err, reply)
+	rclient.get('qae_lastscanblock', function(err, reply)
 	{
 	
 		var blockheight = parseInt(reply);
 
-		rclient.hget('ringsignatures', blockheight, function(err, replytwo)
+		rclient.hget('qae_ringsignatures', blockheight, function(err, replytwo)
 		{
 		
 		
@@ -1456,7 +1474,7 @@ function truncateToDecimals(num, dec = 2)
 function error_handle(error, caller = 'unknown', severity = 'error')
 {
 
-	var scriptname = 'qsltApi.js';
+	var scriptname = 'qaeApi.js';
 
 	console.log("Error Handle has been called!");
 
