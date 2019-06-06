@@ -65,16 +65,20 @@ rclient.on('error',function() {
 	error_handle("Error in Redis", 'redisConnection');
 });
 
+if (process.argv.length == 2) 
+{
 
+	if (parseInt(process.argv[2]) == 1)
+	{
 
-// for debug testing only
-rclient.del('qae_lastscanblock', function(err, reply){});
-rclient.del('qae_lastblockid', function(err, reply){});
-rclient.del('qae_ringsignatures', function(err, reply){});
+		// force rescan - for debug testing 
+		rclient.del('qae_lastscanblock', function(err, reply){});
+		rclient.del('qae_lastblockid', function(err, reply){});
+		rclient.del('qae_ringsignatures', function(err, reply){});
 
-//rclient.set('qae_lastscanblock', 3015912, function(err, reply){});
-//rclient.set('qae_lastblockid', 'be7429ac221a3d740b5ffbb232825ff17601e3a80df12cebf7e9e9e8d998532a', function(err, reply){});
-
+	}
+	
+}
 
 // configure app to use bodyParser()
 // this will let us get the data from a POST
