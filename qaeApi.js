@@ -564,6 +564,32 @@ router.route('/peerinfo')
         
     });
     
+router.route('/getheight')
+    .get(function(req, res) {
+    
+        updateaccessstats(req);
+        
+        rclient.get('qae_lastscanblock', function(err, reply)
+        {
+    
+            if (err)
+            {
+                console.log(err);
+                var message = {error: 'Height not available'};
+            }
+            else if (reply == null || parseInt(reply) != reply)
+            {
+
+                var message = {height: parseInt(reply)};
+                
+            }
+
+            res.json(message);
+            
+        });
+        
+    });
+    
 router.route('/getRingSignature/:height')
     .get(function(req, res) {
     
@@ -1227,7 +1253,6 @@ console.log("Validating " + ip + ":" + port + " at height " + blockheight);
         rclient.hget('qae_ringsignatures', blockheight, function(err, replytwo)
         {
         
-        
             if (reply)
             {
             
@@ -1237,7 +1262,7 @@ console.log("Validating " + ip + ":" + port + " at height " + blockheight);
 
 console.log("RingSig should be: " + ringsignature);
 
-                request.get(peerapiurl, {json:true}, function (error, response, body) 
+                request.get(peerapiurl + '/getRingSignature/' + blockheight, {json:true}, function (error, response, body) 
                 {
                 
                     if (error)
