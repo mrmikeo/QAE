@@ -694,7 +694,7 @@ var interval = setInterval(function() {
 
     newblocknotify();
   
-}, 30000);
+}, 8000);
 
 
 function initialize()
@@ -1246,7 +1246,7 @@ function validatePeer(ip, port)
     rclient.get('qae_lastscanblock', function(err, reply)
     {
     
-        var blockheight = parseInt(reply);
+        var blockheight = parseInt(reply) - 1;
         
 console.log("Validating " + ip + ":" + port + " at height " + blockheight);
 
@@ -1278,10 +1278,11 @@ console.log(error);
                         if (body && !body.error && body.ringsignature)
                         {
 
-console.log("RingSig should is: " + ringsignature);
+console.log("RingSig should is: " + body.ringsignature);
 
                             if (body.ringsignature == ringsignature)
                             {
+console.log("Ring sig validated..");
                                 // Validated
                                 goodPeers[ip + ":" + port] = {ip: ip, port: port, height: blockheight};
                                 getPeers(ip + ":" + port);
