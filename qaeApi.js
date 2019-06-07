@@ -1215,7 +1215,7 @@ function newblocknotify()
 function validatePeer(ip, port)
 {
 
-    var peerapiurl = ip + ":" + port + "/api";
+    var peerapiurl = "http://" + ip + ":" + port + "/api";
     
     rclient.get('qae_lastscanblock', function(err, reply)
     {
