@@ -1189,7 +1189,7 @@ function doScan()
                                             if (trxcounter == tresponse.data.length)
                                             {
                                             
-                                                await processRingSignatures(thisblockheight, false, qdb);
+                                                await processRingSignatures(thisblockheight, processedItems, qdb);
                                             
                                             }
                             
@@ -1207,51 +1207,6 @@ function doScan()
                                 await processRingSignatures(thisblockheight, false, qdb);
                                 
                             }
-                            
-
-                            
-                            // Do the ring signature hashing stuff here
-
-/*
-
-                            if (thisblockheight > 1)
-                            {
-                                // Not first block
-                                previoushash = await hgetAsync('qae_ringsignatures', (parseInt(thisblockheight) - 1));
-                                                
-                                if (processedItems == true || sigblockhash == '' || sigtokenhash == '' || sigaddrhash == '' || sigtrxhash == '')
-                                {               
-                                
-                                    // Only check if new things were processed or we have empty vars
-                                                
-                                    sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
-                                    sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
-                                    sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
-                                    sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
-            
-                                }
-            
-                                fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
-                                                                                                
-                                await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
-                                                                                            
-                            }
-                            else
-                            {
-                                // First Block
-
-                                sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
-                                sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
-                                sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
-                                sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
-            
-                                fullhash = crypto.createHash('sha256').update(sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
-                                                
-                                await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
-                                            
-                            }
-
-*/
 
                             await setAsync('qae_lastscanblock', thisblockheight);
                             await setAsync('qae_lastblockid', blockidcode);
