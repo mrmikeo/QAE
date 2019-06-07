@@ -80,6 +80,7 @@ rclient.on('error',function() {
 // Rescan Flag  (ie. node qaeApi.js true)
 
 // debugging - remove afterwards
+
 (async () => {
 
     var mclient = await qdb.connect();
@@ -94,6 +95,7 @@ rclient.on('error',function() {
     await qdb.close();
 
 })();
+
 
 if (process.argv.length == 3) 
 {
@@ -1187,7 +1189,7 @@ function doScan()
                                             if (trxcounter == tresponse.data.length)
                                             {
                                             
-                                                processRingSignatures(thisblockheight, false, qdb);
+                                                await processRingSignatures(thisblockheight, false, qdb);
                                             
                                             }
                             
@@ -1202,7 +1204,7 @@ function doScan()
                             else
                             {
                             
-                                processRingSignatures(thisblockheight, false, qdb);
+                                await processRingSignatures(thisblockheight, false, qdb);
                                 
                             }
                             
@@ -1288,7 +1290,7 @@ function doScan()
 
 }
 
-function processRingSignatures(thisblockheight, processedItems, qdb)
+async function processRingSignatures(thisblockheight, processedItems, qdb)
 {
 
     (async () => {
@@ -1329,6 +1331,8 @@ function processRingSignatures(thisblockheight, processedItems, qdb)
                                 await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
                                             
                             }
+                            
+        return true;
 
     })();
 
