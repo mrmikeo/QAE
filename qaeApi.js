@@ -8,18 +8,18 @@
 *
 */
 
-const express    = require('express');          // call express
-const app        = express();                   // define our app using express
-const bodyParser = require('body-parser');      // for post calls
-const cors       = require('cors');             // Cross Origin stuff
-const redis      = require('redis');            // a really fast nosql keystore
-const fs         = require('fs');               // so we can read the config ini file from disk
-const ini        = require('ini');              // so we can parse the ini files properties
-const Big        = require('big.js');           // required unless you want floating point math issues
-const nodemailer = require('nodemailer');       // for sending error reports about this node
-const crypto     = require('crypto');           // for creating hashes of things
-const request    = require('request');
-const publicIp   = require('public-ip');        // a helper to find out what our external IP is.   Needed for generating proper ring signatures
+const express     = require('express');          // call express
+const app         = express();                   // define our app using express
+const bodyParser  = require('body-parser');      // for post calls
+const cors        = require('cors');             // Cross Origin stuff
+const redis       = require('redis');            // a really fast nosql keystore
+const fs          = require('fs');               // so we can read the config ini file from disk
+const ini         = require('ini');              // so we can parse the ini files properties
+const Big         = require('big.js');           // required unless you want floating point math issues
+const nodemailer  = require('nodemailer');       // for sending error reports about this node
+const crypto      = require('crypto');           // for creating hashes of things
+const request     = require('request');
+const publicIp    = require('public-ip');        // a helper to find out what our external IP is.   Needed for generating proper ring signatures
 const {promisify} = require('util');
 
 // API Library
@@ -34,15 +34,16 @@ const mongodatabase = iniconfig.mongo_database;
 
 // MongoDB Library
 const qaeDB = require("./lib/qaeDB");
-const qdb = new qaeDB.default(mongoconnecturl, mongodatabase);
+const qdb = new qaeDB.default(mongoconnecturl, mongodatabase); /* For internal processing */
+const qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase); /* For the API */
 
 // Connect to Redis
-const rclient = redis.createClient(iniconfig.redis_port, iniconfig.redis_host,{detect_buffers: true});
+const rclient   = redis.createClient(iniconfig.redis_port, iniconfig.redis_host,{detect_buffers: true});
 const hgetAsync = promisify(rclient.hget).bind(rclient);
 const hsetAsync = promisify(rclient.hset).bind(rclient);
-const getAsync = promisify(rclient.get).bind(rclient);
-const setAsync = promisify(rclient.set).bind(rclient);
-const delAsync = promisify(rclient.del).bind(rclient);
+const getAsync  = promisify(rclient.get).bind(rclient);
+const setAsync  = promisify(rclient.set).bind(rclient);
+const delAsync  = promisify(rclient.del).bind(rclient);
 
 // QAE-1 Token Schema
 const qaeSchema = require("./lib/qaeSchema");
@@ -78,14 +79,14 @@ rclient.on('error',function() {
 
 // Rescan Flag  (ie. node qaeApi.js true)
 
-// debugging
+// debugging - remove afterwards
 (async () => {
 
     var mclient = await qdb.connect();
     qdb.setClient(mclient);
             
-    await setAsync('qae_lastscanblock', 2859482);
-    await setAsync('qae_lastblockid', '69781d4442843008e53c47d2e0ce596855508dec52c85d41ae26edc82df1dce8');
+    await setAsync('qae_lastscanblock', 2800000);
+    await setAsync('qae_lastblockid', '4e537193271cb35d31b8217e4c7ff304605c66e24b139871547ae4f50ce45cfa');
     await qdb.removeDocuments('tokens', {});
     await qdb.removeDocuments('addresses', {});
     await qdb.removeDocuments('transactions', {});
@@ -227,11 +228,11 @@ router.route('/tokens')
 
         (async () => {
         
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
-            message = await qdb.findDocuments('tokens', {}, limit, sort, skip);
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
+            message = await qdbapi.findDocuments('tokens', {}, limit, sort, skip);
 
-            await qdb.close();
+            await qdbapi.close();
             
             res.json(message);
         
@@ -250,11 +251,11 @@ router.route('/token/:id')
 
         (async () => {
         
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
-            message = await qdb.findDocuments('tokens', {'tokenDetails.tokenIdHex': tokenid});
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
+            message = await qdbapi.findDocuments('tokens', {'tokenDetails.tokenIdHex': tokenid});
 
-            await qdb.close();
+            await qdbapi.close();
             
             res.json(message);
         
@@ -289,11 +290,11 @@ router.route('/addresses')
 
         (async () => {
         
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
-            message = await qdb.findDocuments('addresses', {}, limit, sort, skip);
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
+            message = await qdbapi.findDocuments('addresses', {}, limit, sort, skip);
 
-            await qdb.close();
+            await qdbapi.close();
             
             res.json(message);
         
@@ -312,11 +313,11 @@ router.route('/address/:addr')
 
         (async () => {
         
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
-            message = await qdb.findDocuments('addresses', {"address": addr});
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
+            message = await qdbapi.findDocuments('addresses', {"address": addr});
 
-            await qdb.close();
+            await qdbapi.close();
             
             res.json(message);
         
@@ -353,11 +354,11 @@ router.route('/addressesByTokenId/:tokenid')
 
         (async () => {
         
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
-            message = await qdb.findDocuments('addresses', {"tokenIdHex": tokenid}, limit, sort, skip);
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
+            message = await qdbapi.findDocuments('addresses', {"tokenIdHex": tokenid}, limit, sort, skip);
 
-            await qdb.close();
+            await qdbapi.close();
             
             res.json(message);
         
@@ -377,15 +378,15 @@ router.route('/balance/:tokenid/:address')
 
         (async () => {
         
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
 
             var rawRecordId = addr + '.' + tokenid;
             var recordId = crypto.createHash('md5').update(rawRecordId).digest('hex');
             
-            message = await qdb.findDocument('addresses', {"recordId": recordId});
+            message = await qdbapi.findDocument('addresses', {"recordId": recordId});
 
-            await qdb.close();
+            await qdbapi.close();
             
             if (message.tokenBalance)
             {
@@ -432,11 +433,11 @@ router.route('/transactions')
 
         (async () => {
         
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
-            message = await qdb.findDocuments('transactions', {}, limit, sort, skip);
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
+            message = await qdbapi.findDocuments('transactions', {}, limit, sort, skip);
 
-            await qdb.close();
+            await qdbapi.close();
             
             res.json(message);
         
@@ -455,11 +456,11 @@ router.route('/transaction/:txid')
 
         (async () => {
         
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
-            message = await qdb.findDocuments('transactions', {"txid": txid});
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
+            message = await qdbapi.findDocuments('transactions', {"txid": txid});
 
-            await qdb.close();
+            await qdbapi.close();
             
             res.json(message);
         
@@ -496,14 +497,14 @@ router.route('/transactions/:tokenid')
 
         (async () => {
         
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
             
             var mquery = {"transactionDetails.tokenIdHex":tokenid};
             
-            message = await qdb.findDocuments('transactions', mquery, limit, sort, skip);
+            message = await qdbapi.findDocuments('transactions', mquery, limit, sort, skip);
 
-            await qdb.close();
+            await qdbapi.close();
             
             res.json(message);
         
@@ -541,8 +542,8 @@ router.route('/transactions/:tokenid/:address')
 
         (async () => {
         
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
             
             var mquery = {
                 $and : 
@@ -560,9 +561,9 @@ router.route('/transactions/:tokenid/:address')
                 ]
             };
             
-            message = await qdb.findDocuments('transactions', mquery, limit, sort, skip);
+            message = await qdbapi.findDocuments('transactions', mquery, limit, sort, skip);
 
-            await qdb.close();
+            await qdbapi.close();
             
             res.json(message);
         
@@ -600,11 +601,11 @@ router.route('/tokensByOwner/:owner')
 
         (async () => {
         
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
-            message = await qdb.findDocuments('tokens', {"tokenDetails.ownerAddress": ownerId}, limit, sort, skip);
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
+            message = await qdbapi.findDocuments('tokens', {"tokenDetails.ownerAddress": ownerId}, limit, sort, skip);
 
-            await qdb.close();
+            await qdbapi.close();
             
             res.json(message);
         
@@ -799,14 +800,12 @@ function initialize()
                 if (exists == true)
                 {
                     console.log("Removing all documents from 'tokens'");
-                    response = await qdb.removeDocuments('tokens', {});
-                    //console.log(response);
+                    await qdb.removeDocuments('tokens', {});
                 }
                 else
                 {
                     console.log("Creating new collection 'tokens'");
-                    response = await qdb.createCollection('tokens', {});
-                    //console.log(response);
+                    await qdb.createCollection('tokens', {});
                 }
 
                 exists = await qdb.doesCollectionExist('addresses');
@@ -814,14 +813,12 @@ function initialize()
                 if (exists == true)
                 {
                     console.log("Removing all documents from 'addresses'");
-                    response = await qdb.removeDocuments('addresses', {});
-                    //console.log(response);
+                    await qdb.removeDocuments('addresses', {});
                 }
                 else
                 {
                     console.log("Creating new collection 'addresses'");
-                    response = await qdb.createCollection('addresses', {});
-                    //console.log(response);
+                    await qdb.createCollection('addresses', {});
                 }
                 
                 exists = await qdb.doesCollectionExist('transactions');
@@ -829,16 +826,13 @@ function initialize()
                 if (exists == true)
                 {
                     console.log("Removing all documents from 'transactions'");
-                    response = await qdb.removeDocuments('transactions', {});
-                    //console.log(response);
+                    await qdb.removeDocuments('transactions', {});
                 }
                 else
                 {
                     console.log("Creating new collection 'transactions'");
-                    response = await qdb.createCollection('transactions', {});
-                    //console.log(response);
+                    await qdb.createCollection('transactions', {});
                 }
-                
                 
                 var redownload = false;
                 
@@ -1084,9 +1078,10 @@ function doScan()
             (async () => {
 
                 var currentHeight = 0;
-                
+
                 var mclient = await qdb.connect();
                 qdb.setClient(mclient);
+
                 message = await qdb.findDocuments('blocks', {}, 1, {"height":-1}, 0);           
             
                 if (message && message[0].height) currentHeight = message[0].height;
@@ -1147,14 +1142,17 @@ function doScan()
                 
                                 var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
                 
+            
                                 if (tresponse.data)
                                 {
-                
-                                    await asyncForEach(tresponse, async (txdata) => {
-                
-                                    //tresponse.data.forEach( (txdata) => {
+                                
+                                    var trxcounter = 0;
+                                                                
+                                    tresponse.data.forEach( (txdata) => {
                         
                                         (async () => {
+                                        
+                                            trxcounter++;
                         
                                             if (txdata.vendorField && txdata.vendorField != '')
                                             {
@@ -1186,18 +1184,32 @@ function doScan()
                             
                                             }
                                             
-
+                                            if (trxcounter == tresponse.data.length)
+                                            {
+                                            
+                                                processRingSignatures(thisblockheight, false, qdb);
+                                            
+                                            }
                             
                                         })();
                             
                                     });
                     
                                 }
+                                
                     
+                            }
+                            else
+                            {
+                            
+                                processRingSignatures(thisblockheight, false, qdb);
+                                
                             }
                             
                             // Do the ring signature hashing stuff here
-                                            
+
+/*
+
                             if (thisblockheight > 1)
                             {
                                 // Not first block
@@ -1234,7 +1246,9 @@ function doScan()
                                 await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
                                             
                             }
-                            
+
+*/
+
                             await setAsync('qae_lastscanblock', thisblockheight);
                             await setAsync('qae_lastblockid', blockidcode);
                     
@@ -1256,7 +1270,7 @@ function doScan()
 
                 }
             
-                await qdb.close();
+                //await qdb.close();
                 
                 scanLock = false;
                 scanLockTimer = 0;
@@ -1273,6 +1287,53 @@ function doScan()
     
 
 }
+
+function processRingSignatures(thisblockheight, processedItems, qdb)
+{
+
+    (async () => {
+
+                            if (thisblockheight > 1)
+                            {
+                                // Not first block
+                                previoushash = await hgetAsync('qae_ringsignatures', (parseInt(thisblockheight) - 1));
+                                                
+                                if (processedItems == true || sigblockhash == '' || sigtokenhash == '' || sigaddrhash == '' || sigtrxhash == '')
+                                {               
+                                
+                                    // Only check if new things were processed or we have empty vars
+                                                
+                                    sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
+                                    sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
+                                    sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
+                                    sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
+            
+                                }
+            
+                                fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
+                                                                                                
+                                await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
+                                                                                            
+                            }
+                            else
+                            {
+                                // First Block
+
+                                sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
+                                sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
+                                sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
+                                sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
+            
+                                fullhash = crypto.createHash('sha256').update(sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
+                                                
+                                await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
+                                            
+                            }
+
+    })();
+
+}
+
 
 function newblocknotify()
 {
