@@ -81,11 +81,16 @@ rclient.on('error',function() {
 // debugging
 (async () => {
 
+    var mclient = await qdb.connect();
+    qdb.setClient(mclient);
+            
     await setAsync('qae_lastscanblock', 2859482);
-    await setAsync('qae_lastblockid', '4e010f9c61d255ebc1fb245cc5794a7b22f1f90c6fbda59fdeb79bf92bb0999d');
+    await setAsync('qae_lastblockid', '69781d4442843008e53c47d2e0ce596855508dec52c85d41ae26edc82df1dce8');
     await qdb.removeDocuments('tokens', {});
     await qdb.removeDocuments('addresses', {});
     await qdb.removeDocuments('transactions', {});
+    
+    await qdb.close();
 
 })();
 
