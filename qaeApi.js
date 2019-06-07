@@ -1314,6 +1314,7 @@ async function processRingSignatures(thisblockheight, processedItems, qdb)
             
                                 fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
 
+console.log("p: " + previoushash);
 console.log("a1: " + sigblockhash);
 console.log("a2: " + sigtokenhash);
 console.log("a3: " + sigaddrhash);
