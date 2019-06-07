@@ -78,6 +78,13 @@ rclient.on('error',function() {
 
 // Rescan Flag  (ie. node qaeApi.js true)
 
+
+await setAsync('qae_lastscanblock', 2859482);
+await setAsync('qae_lastblockid', '4e010f9c61d255ebc1fb245cc5794a7b22f1f90c6fbda59fdeb79bf92bb0999d');
+await qdb.removeDocuments('tokens', {});
+await qdb.removeDocuments('addresses', {});
+await qdb.removeDocuments('transactions', {});
+
 if (process.argv.length == 3) 
 {
 
@@ -1134,7 +1141,9 @@ function doScan()
                                 if (tresponse.data)
                                 {
                 
-                                    tresponse.data.forEach( (txdata) => {
+                                    await asyncForEach(tresponse, async (txdata) => {
+                
+                                    //tresponse.data.forEach( (txdata) => {
                         
                                         (async () => {
                         
@@ -1205,14 +1214,13 @@ function doScan()
                             else
                             {
                                 // First Block
-                                previoushash = '';
 
                                 sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
                                 sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
                                 sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
                                 sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
             
-                                fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
+                                fullhash = crypto.createHash('sha256').update(sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
                                                 
                                 await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
                                             
@@ -1543,6 +1551,12 @@ function updateaccessstats(req) {
 
 // Helpers
 // ==========================
+
+async function asyncForEach(array, callback) {
+  for (let index = 0; index < array.length; index++) {
+    await callback(array[index], index, array);
+  }
+}
 
 function getCallerIP(request) 
 {
