@@ -1221,6 +1221,8 @@ function validatePeer(ip, port)
     {
     
         var blockheight = parseInt(reply);
+        
+console.log("Validating " + ip + ":" + port + " at height " + blockheight);
 
         rclient.hget('qae_ringsignatures', blockheight, function(err, replytwo)
         {
@@ -1232,6 +1234,8 @@ function validatePeer(ip, port)
                 // This is what the peer hash should be
             
                 var ringsignature = crypto.createHash('sha256').update(ip + reply).digest('hex');
+
+console.log("RingSig should be: " + ringsignature);
 
                 request.get(peerapiurl, {json:true}, function (error, response, body) 
                 {
@@ -1248,7 +1252,9 @@ function validatePeer(ip, port)
                     {
                         if (body && !body.error && body.ringsignature)
                         {
-                        
+
+console.log("RingSig should is: " + ringsignature);
+
                             if (body.ringsignature == ringsignature)
                             {
                                 // Validated
@@ -1267,7 +1273,9 @@ function validatePeer(ip, port)
                         }
                         else
                         {
-                        
+
+console.log("Unable to validate at height: " + blockheight);
+
                             // Cannot validate
                             delete goodPeers[ip + ":" + port];
                             unvalidatedPeers[ip + ":" + port] = {ip: ip, port: port};
