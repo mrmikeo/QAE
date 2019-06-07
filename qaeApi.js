@@ -21,6 +21,7 @@ const crypto      = require('crypto');           // for creating hashes of thing
 const request     = require('request');
 const publicIp    = require('public-ip');        // a helper to find out what our external IP is.   Needed for generating proper ring signatures
 const {promisify} = require('util');
+//const asyncv3     = require('async');
 
 // API Library
 const qreditApi = require("./lib/qreditApi");
@@ -86,8 +87,8 @@ rclient.on('error',function() {
     var mclient = await qdb.connect();
     qdb.setClient(mclient);
             
-    await setAsync('qae_lastscanblock', 2800000);
-    await setAsync('qae_lastblockid', '4e537193271cb35d31b8217e4c7ff304605c66e24b139871547ae4f50ce45cfa');
+    await setAsync('qae_lastscanblock', 2850000);
+    await setAsync('qae_lastblockid', '15e2242088bcf4f9ea46109881402bb411f174efd9022c7d5bdf0305523349dc');
     await qdb.removeDocuments('tokens', {});
     await qdb.removeDocuments('addresses', {});
     await qdb.removeDocuments('transactions', {});
@@ -1086,9 +1087,14 @@ function doScan()
 
                 message = await qdb.findDocuments('blocks', {}, 1, {"height":-1}, 0);           
             
-                if (message && message[0].height) currentHeight = message[0].height;
+                if (message && message[0].height) currentHeight = parseInt(message[0].height);
             
                 console.log('Current Blockchain Height: ' + currentHeight);
+                
+                await scanBlocksForTransactions(scanBlockId, currentHeight, qdb);
+
+
+/*
 
                 while (parseInt(scanBlockId) < parseInt(currentHeight))
                 {
@@ -1228,8 +1234,11 @@ function doScan()
                     }
 
                 }
+                
+*/
+                
             
-                //await qdb.close();
+                await qdb.close();
                 
                 scanLock = false;
                 scanLockTimer = 0;
@@ -1247,81 +1256,199 @@ function doScan()
 
 }
 
-async function processRingSignatures(thisblockheight, processedItems, qdb)
+async function scanBlocksForTransactions(scanBlockId, currentHeight, qdb)
 {
 
-    //(async () => {
-    
 
 
-                            if (thisblockheight > 1)
-                            {
-
-//console.log("thisblock: " + thisblockheight);
-                            
-                                // Not first block
-                                previoushash = await hgetAsync('qae_ringsignatures', (parseInt(thisblockheight) - 1));
-                                                
-                                if (processedItems == true || sigblockhash == '' || sigtokenhash == '' || sigaddrhash == '' || sigtrxhash == '')
-                                {               
-                                
-                                    // Only check if new things were processed or we have empty vars
-                                                
-                                    sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
-                                    sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
-                                    sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
-                                    sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
-
-                                }
+                while (scanBlockId < currentHeight)
+                {
             
-                                fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
+                    scanLockTimer = Math.floor(new Date() / 1000);
+                
+                    scanBlockId++;
+                        
+                    if (scanBlockId%1000 == 0) console.log("Scanning: " + scanBlockId);
+            
+                    message = await qdb.findDocument('blocks', {"height": scanBlockId});
+                
+                    if (message)
+                    {
 
-//console.log("p: " + previoushash);
-//console.log("a1: " + sigblockhash);
-//console.log("a2: " + sigtokenhash);
-//console.log("a3: " + sigaddrhash);
-//console.log("a4: " + sigtrxhash);
-//console.log("a5: " + fullhash);
+                        var blockdata = message;
 
-//process.exit(-1);
+                        if (blockdata && blockdata.id)
+                        {
 
-                                await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
+                            var blockidcode = blockdata.id;
+                            var blocktranscount = blockdata.transactions;
+                            var thisblockheight = blockdata.height;
+                    
+                            var previousblockid = blockdata.previous;
+
+                            //console.log(previousblockid + ":" + thisblockheight + ':' + blockidcode);
+
+                            if (lastBlockId != previousblockid && thisblockheight > 1)
+                            {
+                    
+                                console.log('Error:  Last Block ID is incorrect!  Rescan Required!');
+                            
+                                console.log("Expected: " + previousblockid);
+                                console.log("Received: " + lastBlockId);
+                                console.log("ThisBlockHeight: " + thisblockheight);
+                                console.log("LastScanBlock: " + scanBlockId);
+                            
+                                rclient.del('qae_lastblockid', function(err, reply){
+                                    rclient.del('qae_lastscanblock', function(err, reply){
+                                        process.exit(-1);
+                                    });
+                                });
+                    
+                            }
+
+                            lastBlockId = blockidcode;
+                            
+                            processedItems = false;
+
+                            if (parseInt(blocktranscount) > 0)
+                            {
+                
+                                var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
+                
+            
+                                if (tresponse.data)
+                                {
                                 
-                                return true;
-                                                                                            
+                                    var trxcounter = 0;
+                                                                
+                                    tresponse.data.forEach( (txdata) => {
+                        
+                                        (async () => {
+                                        
+                                            trxcounter++;
+                        
+                                            if (txdata.vendorField && txdata.vendorField != '')
+                                            {
+                            
+                                                //console.log("txid:" + txdata.id);
+                                                //console.log("vend:" + txdata.vendorField);
+                                
+                                                var isjson = false;
+                            
+                                                try {
+                                                    JSON.parse(txdata.vendorField);
+                                                    isjson = true;
+                                                } catch (e) {
+                                                    //console.log("VendorField is not JSON");
+                                                }
+                            
+                                                if (isjson === true)
+                                                {
+                                                    var parsejson = JSON.parse(txdata.vendorField);
+                                            
+                                                    if (parsejson.qae1)
+                                                    {
+                                                        var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
+                                                        
+                                                        processedItems = true;
+                                                    }
+                                
+                                                }
+                            
+                                            }
+                                            
+                                            if (trxcounter == tresponse.data.length)
+                                            {
+                                            
+                                                await processRingSignatures(thisblockheight, processedItems, qdb);
+                                            
+                                            }
+                            
+                                        })();
+                            
+                                    });
+                    
+                                }
+                                
+                    
                             }
                             else
                             {
-                                // First Block
-
-                                sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
-                                sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
-                                sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
-                                sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
-            
-                                fullhash = crypto.createHash('sha256').update(sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
-
-//console.log("b1: " + sigblockhash);
-//console.log("b2: " + sigtokenhash);
-//console.log("b3: " + sigaddrhash);
-//console.log("b4: " + sigtrxhash);
-//console.log("b5: " + fullhash);
-
-//process.exit(-1);
-
-                                await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
+                            
+                                await processRingSignatures(thisblockheight, false, qdb);
                                 
-                                return true;
-                                            
                             }
 
+                            await setAsync('qae_lastscanblock', thisblockheight);
+                            await setAsync('qae_lastblockid', blockidcode);
+                    
+                        }
+
+                    }
+                    else
+                    {
+                
+                        console.log("Block #" + scanBlockId + " not found in database.. Removing any blocks above this height...");
+                    
+                        response = await qdb.removeDocuments('blocks', {"height": {"$gt": scanBlockId}});
+                    
+                        console.log("Removed " + response.result.n + " blocks from db.  Start this program again");
+                    
+                        process.exit(-1);
+                
+                    }
+
+                }
+
+    return true;
+
+}
+
+async function processRingSignatures(thisblockheight, processedItems, qdb)
+{
+
+    if (thisblockheight > 1)
+    {
+                            
+        // Not first block
+        previoushash = await hgetAsync('qae_ringsignatures', (parseInt(thisblockheight) - 1));
+                                                
+        if (processedItems == true || sigblockhash == '' || sigtokenhash == '' || sigaddrhash == '' || sigtrxhash == '')
+        {               
+                                
+            // Only check if new things were processed or we have empty vars
+                                                
+            sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
+            sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
+            sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
+            sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
+
+        }
+            
+        fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
+
+        await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
+                                
+        return true;
+                                                                                            
+    }
+    else
+    {
+        // First Block
+
+        sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
+        sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
+        sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
+        sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
+            
+        fullhash = crypto.createHash('sha256').update(sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
 
 
-       
-
-    //})();
-
-
+        await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
+                                
+        return true;
+                                            
+    }
 
 }
 
