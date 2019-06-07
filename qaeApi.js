@@ -1397,10 +1397,12 @@ async function scanBlocksForTransactions(scanBlockId, currentHeight, qdb)
                         process.exit(-1);
                 
                     }
+                    
+                    if (scanBlockId = currentHeight - 1) return true;
 
                 }
 
-    return true;
+    
 
 }
 
