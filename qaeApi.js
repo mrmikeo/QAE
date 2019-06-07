@@ -1208,6 +1208,8 @@ function doScan()
                                 
                             }
                             
+
+                            
                             // Do the ring signature hashing stuff here
 
 /*
@@ -1293,10 +1295,15 @@ function doScan()
 async function processRingSignatures(thisblockheight, processedItems, qdb)
 {
 
-    (async () => {
+    //(async () => {
+    
+
 
                             if (thisblockheight > 1)
                             {
+
+//console.log("thisblock: " + thisblockheight);
+                            
                                 // Not first block
                                 previoushash = await hgetAsync('qae_ringsignatures', (parseInt(thisblockheight) - 1));
                                                 
@@ -1314,16 +1321,18 @@ async function processRingSignatures(thisblockheight, processedItems, qdb)
             
                                 fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
 
-console.log("p: " + previoushash);
-console.log("a1: " + sigblockhash);
-console.log("a2: " + sigtokenhash);
-console.log("a3: " + sigaddrhash);
-console.log("a4: " + sigtrxhash);
-console.log("a5: " + fullhash);
+//console.log("p: " + previoushash);
+//console.log("a1: " + sigblockhash);
+//console.log("a2: " + sigtokenhash);
+//console.log("a3: " + sigaddrhash);
+//console.log("a4: " + sigtrxhash);
+//console.log("a5: " + fullhash);
 
-
+//process.exit(-1);
 
                                 await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
+                                
+                                return true;
                                                                                             
                             }
                             else
@@ -1337,21 +1346,27 @@ console.log("a5: " + fullhash);
             
                                 fullhash = crypto.createHash('sha256').update(sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
 
-console.log("b1: " + sigblockhash);
-console.log("b2: " + sigtokenhash);
-console.log("b3: " + sigaddrhash);
-console.log("b4: " + sigtrxhash);
-console.log("b5: " + fullhash);
+//console.log("b1: " + sigblockhash);
+//console.log("b2: " + sigtokenhash);
+//console.log("b3: " + sigaddrhash);
+//console.log("b4: " + sigtrxhash);
+//console.log("b5: " + fullhash);
+
+//process.exit(-1);
 
                                 await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
+                                
+                                return true;
                                             
                             }
 
-process.exit(-1);
 
-        return true;
 
-    })();
+       
+
+    //})();
+
+
 
 }
 
