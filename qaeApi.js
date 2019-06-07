@@ -53,6 +53,16 @@ var myIPAddress = '';
 var goodPeers = [];
 var badPeers = [];
 var unvalidatedPeers = [];
+var scanBlockId = 0;
+var lastBlockId = '';
+var sigblockhash = '';
+var sigtokenhash = '';
+var sigaddrhash = '';
+var sigtrxhash = '';
+var previoushash = '';
+var fullhash = '';
+var processedItems = false;
+    
 
 var seedNode = 'https://qae.qredit.cloud/api/';
 
@@ -65,6 +75,8 @@ rclient.on('error',function() {
     console.log("Error in Redis");
     error_handle("Error in Redis", 'redisConnection');
 });
+
+// Rescan Flag  (ie. node qaeApi.js true)
 
 if (process.argv.length == 3) 
 {
@@ -80,6 +92,46 @@ console.log("forcing a rescan....");
             await delAsync('qae_ringsignatures');
         
         
+        })();
+        
+    }
+    
+}
+
+// Redownload Flag  (ie. node qaeApi.js false true)
+
+if (process.argv.length == 4) 
+{
+
+    if (process.argv[3] == '1' || process.argv[3] == 'true')
+    {
+        (async () => {
+        
+            var mclient = await qdb.connect();
+            qdb.setClient(mclient);
+
+            exists = await qdb.doesCollectionExist('blocks');
+            console.log("Does collection 'blocks' Exist: " + exists);
+            if (exists == true)
+            {
+                console.log("Removing all documents from 'blocks'");
+                response = await qdb.removeDocuments('blocks', {});
+                //console.log(response);
+            }
+            else
+            {
+                console.log("Creating new collection 'blocks'");
+                response = await qdb.createCollection('blocks', {});
+                //console.log(response);
+            }
+    
+            response = await qdb.createIndex('blocks', {"id": 1}, true);
+            response = await qdb.createIndex('blocks', {"height": 1}, false);
+
+            topHeight = 0;
+            
+            await qdb.close();
+
         })();
         
     }
@@ -976,17 +1028,6 @@ function doScan()
     scanLock = true;
     scanLockTimer = Math.floor(new Date() / 1000);
     
-    var scanBlockId = 0;
-    var lastBlockId = '';
-    var sigblockhash = '';
-    var sigtokenhash = '';
-    var sigaddrhash = '';
-    var sigtrxhash = '';
-    var previoushash = '';
-    var fullhash = '';
-    var processedItems = false;
-    
-    
     rclient.get('qae_lastscanblock', function(err, reply){
 
         if (err)
@@ -1144,10 +1185,10 @@ function doScan()
                                 // Not first block
                                 previoushash = await hgetAsync('qae_ringsignatures', (parseInt(thisblockheight) - 1));
                                                 
-                                if (processedItems == true)
+                                if (processedItems == true || sigblockhash == '' || sigtokenhash == '' || sigaddrhash == '' || sigtrxhash == '')
                                 {               
                                 
-                                    // Only check if new things were processed
+                                    // Only check if new things were processed or we have empty vars
                                                 
                                     sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
                                     sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
