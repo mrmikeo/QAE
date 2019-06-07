@@ -78,12 +78,16 @@ rclient.on('error',function() {
 
 // Rescan Flag  (ie. node qaeApi.js true)
 
+// debugging
+(async () => {
 
-await setAsync('qae_lastscanblock', 2859482);
-await setAsync('qae_lastblockid', '4e010f9c61d255ebc1fb245cc5794a7b22f1f90c6fbda59fdeb79bf92bb0999d');
-await qdb.removeDocuments('tokens', {});
-await qdb.removeDocuments('addresses', {});
-await qdb.removeDocuments('transactions', {});
+    await setAsync('qae_lastscanblock', 2859482);
+    await setAsync('qae_lastblockid', '4e010f9c61d255ebc1fb245cc5794a7b22f1f90c6fbda59fdeb79bf92bb0999d');
+    await qdb.removeDocuments('tokens', {});
+    await qdb.removeDocuments('addresses', {});
+    await qdb.removeDocuments('transactions', {});
+
+})();
 
 if (process.argv.length == 3) 
 {
