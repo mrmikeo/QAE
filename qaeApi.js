@@ -1309,11 +1309,19 @@ async function processRingSignatures(thisblockheight, processedItems, qdb)
                                     sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
                                     sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
                                     sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
-            
+
                                 }
             
                                 fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
-                                                                                                
+
+console.log("a1: " + sigblockhash);
+console.log("a2: " + sigtokenhash);
+console.log("a3: " + sigaddrhash);
+console.log("a4: " + sigtrxhash);
+console.log("a5: " + fullhash);
+
+
+
                                 await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
                                                                                             
                             }
@@ -1327,11 +1335,19 @@ async function processRingSignatures(thisblockheight, processedItems, qdb)
                                 sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
             
                                 fullhash = crypto.createHash('sha256').update(sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
-                                                
+
+console.log("b1: " + sigblockhash);
+console.log("b2: " + sigtokenhash);
+console.log("b3: " + sigaddrhash);
+console.log("b4: " + sigtrxhash);
+console.log("b5: " + fullhash);
+
                                 await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
                                             
                             }
-                            
+
+process.exit(-1);
+
         return true;
 
     })();
