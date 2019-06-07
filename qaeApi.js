@@ -665,7 +665,7 @@ router.route('/getRingSignature/:height')
             
                 var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
 
-                message = {ip: myIPAddress, port: port, height: height, ringsignature: ringsignature};
+                message = {ip: myIPAddress, port: port, height: height, ringsignature: ringsignature, debug: reply};
             
                 res.json(message);
             
