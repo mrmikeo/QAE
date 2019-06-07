@@ -42,6 +42,7 @@ const hgetAsync = promisify(rclient.hget).bind(rclient);
 const hsetAsync = promisify(rclient.hset).bind(rclient);
 const getAsync = promisify(rclient.get).bind(rclient);
 const setAsync = promisify(rclient.set).bind(rclient);
+const delAsync = promisify(rclient.del).bind(rclient);
 
 // QAE-1 Token Schema
 const qaeSchema = require("./lib/qaeSchema");
@@ -65,17 +66,22 @@ rclient.on('error',function() {
     error_handle("Error in Redis", 'redisConnection');
 });
 
-if (process.argv.length == 2) 
+if (process.argv.length == 3) 
 {
 
-    if (parseInt(process.argv[2]) == 1)
+    if (process.argv[2] == '1' || process.argv[2] == 'true')
     {
+        (async () => {
+        
+console.log("forcing a rescan....");
 
-        // force rescan - for debug testing 
-        rclient.del('qae_lastscanblock', function(err, reply){});
-        rclient.del('qae_lastblockid', function(err, reply){});
-        rclient.del('qae_ringsignatures', function(err, reply){});
-
+            await delAsync('qae_lastscanblock');
+            await delAsync('qae_lastblockid');
+            await delAsync('qae_ringsignatures');
+        
+        
+        })();
+        
     }
     
 }
