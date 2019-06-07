@@ -1243,7 +1243,7 @@ console.log("RingSig should be: " + ringsignature);
                     if (error)
                     {
                         // An error occurred, cannot validate
-                        
+console.log(error);                  
                         delete goodPeers[ip + ":" + port];
                         unvalidatedPeers[ip + ":" + port] = {ip: ip, port: port};
                         
@@ -1289,7 +1289,7 @@ console.log("Unable to validate at height: " + blockheight);
             }
             else
             {
-
+console.log("We do not have this ringsig: " + blockheight);
                 // Cannot validate this height
                 delete goodPeers[ip + ":" + port];
                 unvalidatedPeers[ip + ":" + port] = {ip: ip, port: port};
