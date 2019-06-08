@@ -1560,6 +1560,8 @@ function newblocknotify()
 function validatePeer(peerip, peerport)
 {
 
+    peerport = parseInt(peerport);
+
     var peerapiurl = "http://" + peerip + ":" + peerport + "/api";
     
     rclient.get('qae_lastscanblock', function(err, reply)
@@ -1589,6 +1591,7 @@ console.log("RingSig should be: " + ringsignature);
                         // An error occurred, cannot validate
 console.log(error);                  
                         delete goodPeers[peerip + ":" + peerport];
+                        delete badPeers[peerip + ":" + peerport];
                         unvalidatedPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport};
                         
                     }
@@ -1604,6 +1607,8 @@ console.log("RingSig received is: " + body.ringsignature);
 console.log("Ring sig validated for peer: " + peerip + ":" + peerport);
                                 // Validated
                                 goodPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, height: blockheight};
+                                delete unvalidatedPeers[peerip + ":" + peerport];
+                                delete badPeers[peerip + ":" + peerport];
                                 getPeers(peerip + ":" + peerport);
                             
                             }
@@ -1611,6 +1616,7 @@ console.log("Ring sig validated for peer: " + peerip + ":" + peerport);
                             {
                             
                                 delete goodPeers[peerip + ":" + peerport];
+                                delete unvalidatedPeers[peerip + ":" + peerport];
                                 badPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, height: blockheight};
                             
                             }
@@ -1623,6 +1629,7 @@ console.log("Unable to validate at height: " + blockheight);
 
                             // Cannot validate
                             delete goodPeers[peerip + ":" + peerport];
+                            delete badPeers[peerip + ":" + peerport];
                             unvalidatedPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport};
                         
                         }
@@ -1637,6 +1644,7 @@ console.log("Unable to validate at height: " + blockheight);
 console.log("We do not have this ringsig: " + blockheight);
                 // Cannot validate this height
                 delete goodPeers[peerip + ":" + peerport];
+                delete badPeers[peerip + ":" + peerport];
                 unvalidatedPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport};
                             
             }
@@ -1695,7 +1703,7 @@ console.log("Checking peer: " + k);
                     if (body.thisPeer != myIPAddress + ":" + port)
                     {
 console.log("Checking peer: " + body.thisPeer);
-                        unvalidatedPeers[body.thisPeer] = {ip: peerdetails[0], port: peerdetails[1]};
+                        unvalidatedPeers[body.thisPeer] = {ip: peerdetails[0], port: parseInt(peerdetails[1])};
                         
                     }
                     
@@ -1757,7 +1765,7 @@ function getPeers(peerNode)
                     if (body.thisPeer != myIPAddress + ":" + port)
                     {
                     
-                        unvalidatedPeers[body.thisPeer] = {ip: peerdetails[0], port: peerdetails[1]};
+                        unvalidatedPeers[body.thisPeer] = {ip: peerdetails[0], port: parseInt(peerdetails[1])};
                         
                     }
                     
