@@ -64,6 +64,7 @@ var sigtrxhash = '';
 var previoushash = '';
 var fullhash = '';
 var processedItems = false;
+var gotSeedPeers = 0;
     
 
 var seedNode = 'https://qae.qredit.cloud/api/';
@@ -1423,7 +1424,10 @@ async function whilstScanBlocks(count, max, qdb)
                 scanLock = false;
                 scanLockTimer = 0;
                 
-                getSeedPeers();
+                var nowTime = Math.floor(new Date() / 1000);
+                
+                if (gotSeedPeers < nowTime - 900) 
+                    getSeedPeers();
         
             })();
             
