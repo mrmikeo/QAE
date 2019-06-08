@@ -1427,7 +1427,10 @@ async function whilstScanBlocks(count, max, qdb)
                 var nowTime = Math.floor(new Date() / 1000);
                 
                 if (gotSeedPeers < nowTime - 900) 
+                {
+                    gotSeedPeers = nowTime;
                     getSeedPeers();
+                }
         
             })();
             
