@@ -78,7 +78,6 @@ rclient.on('error',function() {
     error_handle("Error in Redis", 'redisConnection');
 });
 
-// Rescan Flag  (ie. node qaeApi.js true)
 
 // debugging - remove afterwards
 /*
@@ -87,7 +86,7 @@ rclient.on('error',function() {
     var mclient = await qdb.connect();
     qdb.setClient(mclient);
             
-    await setAsync('qae_lastscanblock', 2859000);
+    await setAsync('qae_lastscanblock', 2859000); // No transactions before this block
     await setAsync('qae_lastblockid', 'ba5596fee6c80a5b2312d530c4aeedeff5147da4e5e60f13ac2c1707d5fff1fa');
     await qdb.removeDocuments('tokens', {});
     await qdb.removeDocuments('addresses', {});
@@ -97,6 +96,8 @@ rclient.on('error',function() {
 
 })();
 */
+
+// Rescan Flag  (ie. node qaeApi.js true)
 
 if (process.argv.length == 3) 
 {
@@ -182,22 +183,6 @@ var router = express.Router();
 router.get('/', function(req, res) {
     res.json({ message: 'Qredit Always Evolving....  Please see our API documentation' });   
 });
-
-// ToDo: Remove
-router.route('/test')
-    .get(function(req, res) {
-    
-        (async () => {
-
-            var response = {};
-
-            response.apiurl = await qapi.getApiUrl();
-            
-            res.json(response);
-        
-        })();
-
-    });
     
 router.route('/tokens')
     .get(function(req, res) {
@@ -741,9 +726,9 @@ router.route('/getRingSignature/:height/:callerport')
             
         });
         
-        var ip = getCallerIP(req).toString();
+        var callerip = getCallerIP(req).toString();
         
-        validatePeer(ip, callerport);
+        validatePeer(callerip, callerport);
         
     });
     
@@ -774,6 +759,12 @@ var interval = setInterval(function() {
   
 }, 8000);
 
+
+var intervalpeers = setInterval(function() {
+
+    testPeers();
+  
+}, 600000);
 
 function initialize()
 {
@@ -996,14 +987,12 @@ function downloadChain(redownload = false)
         
             var bresponse = await qapi.searchBlocks(pagecount, 100, {"height": {"from": scanBlockId, "to": currentHeight }});
 
-//console.log(bresponse);
-
             resultcount = parseInt(bresponse.meta.count);
             
             if (resultcount > 0)
             {
 
-console.log("Downloading from " + parseInt(scanBlockId) + " Page " + pagecount);
+                console.log("Downloading from " + parseInt(scanBlockId) + " Page " + pagecount);
 
                 var blocks = bresponse.data;
 
@@ -1090,13 +1079,9 @@ function doScan()
                 if (message && message[0].height) currentHeight = parseInt(message[0].height);
             
                 console.log('Current Blockchain Height: ' + currentHeight);
-                
-                console.log('sbid1: ' + scanBlockId);
-                
-                sscanBlockId = await whilstScanBlocks(scanBlockId, currentHeight, qdb);
-                
-                console.log('sbid2: ' + sscanBlockId);
-                
+                                
+                await whilstScanBlocks(scanBlockId, currentHeight, qdb);
+                                
 /*
                 while (parseInt(scanBlockId) < parseInt(currentHeight))
                 {
@@ -1539,17 +1524,17 @@ function newblocknotify()
 
 }
 
-function validatePeer(ip, port)
+function validatePeer(peerip, peerport)
 {
 
-    var peerapiurl = "http://" + ip + ":" + port + "/api";
+    var peerapiurl = "http://" + peerip + ":" + peerport + "/api";
     
     rclient.get('qae_lastscanblock', function(err, reply)
     {
     
         var blockheight = parseInt(reply) - 1;
         
-console.log("Validating " + ip + ":" + port + " at height " + blockheight);
+console.log("Validating " + peerip + ":" + peerport + " at height " + blockheight);
 
         rclient.hget('qae_ringsignatures', blockheight, function(err, replytwo)
         {
@@ -1563,7 +1548,7 @@ console.log("Validating " + ip + ":" + port + " at height " + blockheight);
 
 console.log("RingSig should be: " + ringsignature);
 
-                request.get(peerapiurl + '/getRingSignature/' + blockheight, {json:true}, function (error, response, body) 
+                request.get(peerapiurl + '/getRingSignature/' + blockheight + '/' + port, {json:true}, function (error, response, body) 
                 {
                 
                     if (error)
@@ -1579,7 +1564,7 @@ console.log(error);
                         if (body && !body.error && body.ringsignature)
                         {
 
-console.log("RingSig should is: " + body.ringsignature);
+console.log("RingSig received is: " + body.ringsignature);
 
                             if (body.ringsignature == ringsignature)
                             {
@@ -1777,7 +1762,7 @@ function testPeers()
 }
 
 
-// Access Statistics
+// Access Statistics - Will use this later
 // ==========================
 
 function updateaccessstats(req) {
@@ -1797,12 +1782,6 @@ function updateaccessstats(req) {
 
 // Helpers
 // ==========================
-
-async function asyncForEach(array, callback) {
-  for (let index = 0; index < array.length; index++) {
-    await callback(array[index], index, array);
-  }
-}
 
 function getCallerIP(request) 
 {
