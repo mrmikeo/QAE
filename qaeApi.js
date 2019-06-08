@@ -199,7 +199,16 @@ router.route('/status')
             
             var scanned = await getAsync('qae_lastscanblock');
             
-            message = {downloadedBlocks: dlblocks, scannedBlocks: scanned};
+            if (dlblocks && dlblocks[0])
+            {
+                var downloadedblocks = dlblocks[0].height;
+            }
+            else
+            {
+                var downloadedblocks = 0;
+            }
+            
+            message = {downloadedBlocks: parseInt(downloadedblocks), scannedBlocks: parseInt(scanned)};
             
             res.json(message);
                 
