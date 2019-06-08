@@ -1566,7 +1566,7 @@ console.log("Validating " + peerip + ":" + peerport + " at height " + blockheigh
             
                 // This is what the peer hash should be
             
-                var ringsignature = crypto.createHash('sha256').update(ip + reply).digest('hex');
+                var ringsignature = crypto.createHash('sha256').update(peerip + reply).digest('hex');
 
 console.log("RingSig should be: " + ringsignature);
 
@@ -1577,8 +1577,8 @@ console.log("RingSig should be: " + ringsignature);
                     {
                         // An error occurred, cannot validate
 console.log(error);                  
-                        delete goodPeers[ip + ":" + port];
-                        unvalidatedPeers[ip + ":" + port] = {ip: ip, port: port};
+                        delete goodPeers[peerip + ":" + port];
+                        unvalidatedPeers[peerip + ":" + port] = {ip: ip, port: port};
                         
                     }
                     else
@@ -1592,15 +1592,15 @@ console.log("RingSig received is: " + body.ringsignature);
                             {
 console.log("Ring sig validated..");
                                 // Validated
-                                goodPeers[ip + ":" + port] = {ip: ip, port: port, height: blockheight};
-                                getPeers(ip + ":" + port);
+                                goodPeers[peerip + ":" + port] = {ip: ip, port: port, height: blockheight};
+                                getPeers(peerip + ":" + port);
                             
                             }
                             else
                             {
                             
-                                delete goodPeers[ip + ":" + port];
-                                badPeers[ip + ":" + port] = {ip: ip, port: port, height: blockheight};
+                                delete goodPeers[peerip + ":" + port];
+                                badPeers[peerip + ":" + port] = {ip: ip, port: port, height: blockheight};
                             
                             }
                         
@@ -1611,8 +1611,8 @@ console.log("Ring sig validated..");
 console.log("Unable to validate at height: " + blockheight);
 
                             // Cannot validate
-                            delete goodPeers[ip + ":" + port];
-                            unvalidatedPeers[ip + ":" + port] = {ip: ip, port: port};
+                            delete goodPeers[peerip + ":" + port];
+                            unvalidatedPeers[peerip + ":" + port] = {ip: ip, port: port};
                         
                         }
                     
@@ -1625,8 +1625,8 @@ console.log("Unable to validate at height: " + blockheight);
             {
 console.log("We do not have this ringsig: " + blockheight);
                 // Cannot validate this height
-                delete goodPeers[ip + ":" + port];
-                unvalidatedPeers[ip + ":" + port] = {ip: ip, port: port};
+                delete goodPeers[peerip + ":" + port];
+                unvalidatedPeers[peerip + ":" + port] = {ip: ip, port: port};
                             
             }
             
