@@ -81,7 +81,7 @@ rclient.on('error',function() {
 // Rescan Flag  (ie. node qaeApi.js true)
 
 // debugging - remove afterwards
-
+/*
 (async () => {
 
     var mclient = await qdb.connect();
@@ -96,7 +96,7 @@ rclient.on('error',function() {
     await qdb.close();
 
 })();
-
+*/
 
 if (process.argv.length == 3) 
 {
