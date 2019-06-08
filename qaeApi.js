@@ -702,7 +702,7 @@ router.route('/getRingSignature/:height')
             
                 var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
 
-                message = {ip: myIPAddress, port: port, height: height, ringsignature: ringsignature}; //, debug: reply};
+                message = {ip: myIPAddress, port: parseInt(port), height: height, ringsignature: ringsignature}; //, debug: reply};
             
                 res.json(message);
             
@@ -712,7 +712,7 @@ router.route('/getRingSignature/:height')
 
                 var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
 
-                message = {ip: myIPAddress, port: port, height: height, ringsignature: '', error: 'Signature Not Found'};
+                message = {ip: myIPAddress, port: parseInt(port), height: height, ringsignature: '', error: 'Signature Not Found'};
             
                 res.json(message);
             
@@ -740,7 +740,7 @@ router.route('/getRingSignature/:height/:callerport')
             
                 var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
 
-                message = {ip: myIPAddress, port: port, height: height, ringsignature: ringsignature};
+                message = {ip: myIPAddress, port: parseInt(port), height: height, ringsignature: ringsignature};
             
                 res.json(message);
             
@@ -750,7 +750,7 @@ router.route('/getRingSignature/:height/:callerport')
 
                 var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
 
-                message = {ip: myIPAddress, port: port, height: height, ringsignature: '', error: 'Signature Not Found'};
+                message = {ip: myIPAddress, port: parseInt(port), height: height, ringsignature: '', error: 'Signature Not Found'};
             
                 res.json(message);
             
@@ -762,7 +762,7 @@ router.route('/getRingSignature/:height/:callerport')
         
         if (!goodPeers[callerip + ":" + callerport] && !unvalidatedPeers[callerip + ":" + callerport])
         {
-            unvalidatedPeers[callerip + ":" + callerport] = {ip: callerip, port: callerport};
+            unvalidatedPeers[callerip + ":" + callerport] = {ip: callerip, port: parseInt(callerport)};
         }
         
     });
