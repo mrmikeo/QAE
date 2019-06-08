@@ -184,6 +184,28 @@ router.get('/', function(req, res) {
     res.json({ message: 'Qredit Always Evolving....  Please see our API documentation' });   
 });
     
+router.route('/status')
+    .get(function(req, res) {
+    
+        (async () => {
+
+            var mclient = await qdb.connect();
+            qdb.setClient(mclient);
+
+            var dlblocks = await qdb.findDocuments('blocks', {}, 1, {"height":-1}, 0);    
+                
+            await qdbapi.close();
+            
+            var scanned = await getAsync('qae_lastscanblock');
+            
+            message = {downloadedBlocks: dlblocks, scannedBlocks: scanned};
+            
+            res.json(message);
+                
+        })();
+    
+    });
+    
 router.route('/tokens')
     .get(function(req, res) {
 
