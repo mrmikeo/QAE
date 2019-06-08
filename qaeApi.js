@@ -764,7 +764,6 @@ router.route('/getRingSignature/:height/:callerport')
         {
             unvalidatedPeers[callerip + ":" + callerport] = {ip: callerip, port: callerport};
         }
-        //validatePeer(callerip, callerport);
         
     });
     
@@ -1117,158 +1116,7 @@ function doScan()
                 console.log('Current Blockchain Height: ' + currentHeight);
                                 
                 await whilstScanBlocks(scanBlockId, currentHeight, qdb);
-                                
-/*
-                while (parseInt(scanBlockId) < parseInt(currentHeight))
-                {
-            
-                    scanLockTimer = Math.floor(new Date() / 1000);
-                
-                    scanBlockId++;
-                        
-                    if (scanBlockId%1000 == 0) console.log("Scanning: " + scanBlockId);
-            
-                    message = await qdb.findDocument('blocks', {"height": scanBlockId});
-                
-                    if (message)
-                    {
-
-                        var blockdata = message;
-
-                        if (blockdata && blockdata.id)
-                        {
-
-                            var blockidcode = blockdata.id;
-                            var blocktranscount = blockdata.transactions;
-                            var thisblockheight = blockdata.height;
-                    
-                            var previousblockid = blockdata.previous;
-
-                            //console.log(previousblockid + ":" + thisblockheight + ':' + blockidcode);
-
-                            if (lastBlockId != previousblockid && thisblockheight > 1)
-                            {
-                    
-                                console.log('Error:  Last Block ID is incorrect!  Rescan Required!');
-                            
-                                console.log("Expected: " + previousblockid);
-                                console.log("Received: " + lastBlockId);
-                                console.log("ThisBlockHeight: " + thisblockheight);
-                                console.log("LastScanBlock: " + scanBlockId);
-                            
-                                rclient.del('qae_lastblockid', function(err, reply){
-                                    rclient.del('qae_lastscanblock', function(err, reply){
-                                        process.exit(-1);
-                                    });
-                                });
-                    
-                            }
-
-                            lastBlockId = blockidcode;
-                            
-                            processedItems = false;
-
-                            if (parseInt(blocktranscount) > 0)
-                            {
-                
-                                var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
-                
-            
-                                if (tresponse.data)
-                                {
-                                
-                                    var trxcounter = 0;
-                                                                
-                                    tresponse.data.forEach( (txdata) => {
-                        
-                                        (async () => {
-                                        
-                                            trxcounter++;
-                        
-                                            if (txdata.vendorField && txdata.vendorField != '')
-                                            {
-                            
-                                                //console.log("txid:" + txdata.id);
-                                                //console.log("vend:" + txdata.vendorField);
-                                
-                                                var isjson = false;
-                            
-                                                try {
-                                                    JSON.parse(txdata.vendorField);
-                                                    isjson = true;
-                                                } catch (e) {
-                                                    //console.log("VendorField is not JSON");
-                                                }
-                            
-                                                if (isjson === true)
-                                                {
-                                                    var parsejson = JSON.parse(txdata.vendorField);
-                                            
-                                                    if (parsejson.qae1)
-                                                    {
-                                                        var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
-                                                        
-                                                        processedItems = true;
-                                                    }
-                                
-                                                }
-                            
-                                            }
-                                            
-                                            if (trxcounter == tresponse.data.length)
-                                            {
-                                            
-                                                await processRingSignatures(thisblockheight, processedItems, qdb);
-                                            
-                                            }
-                            
-                                        })();
-                            
-                                    });
-                    
-                                }
-                                
-                    
-                            }
-                            else
-                            {
-                            
-                                await processRingSignatures(thisblockheight, false, qdb);
-                                
-                            }
-
-                            await setAsync('qae_lastscanblock', thisblockheight);
-                            await setAsync('qae_lastblockid', blockidcode);
-                    
-                        }
-
-                    }
-                    else
-                    {
-                
-                        console.log("Block #" + scanBlockId + " not found in database.. Removing any blocks above this height...");
-                    
-                        response = await qdb.removeDocuments('blocks', {"height": {"$gt": scanBlockId}});
-                    
-                        console.log("Removed " + response.result.n + " blocks from db.  Start this program again");
-                    
-                        process.exit(-1);
-                
-                    }
-
-                }
-*/
-
-/*
-                await qdb.close();
-                
-                scanLock = false;
-                scanLockTimer = 0;
-                
-                getSeedPeers();
-                
-*/
-        
+                                    
             })();
     
 
@@ -1439,7 +1287,7 @@ async function whilstScanBlocks(count, max, qdb)
                 
                 var nowTime = Math.floor(new Date() / 1000);
                 
-                if (gotSeedPeers < nowTime - 900) 
+                if (gotSeedPeers < nowTime - 900) // Check for seeds every 15 minutes
                 {
                     gotSeedPeers = nowTime;
                     getSeedPeers();
@@ -1488,21 +1336,6 @@ function processRingSignatures(thisblockheight, processedItems, qdb)
         
                         rclient.hset('qae_ringsignatures', thisblockheight, fullhash, function(err, reply)
                         {
-           
-// debugging
-if (thisblockheight == 2859483 || thisblockheight == 2859482 || thisblockheight%1000 == 0 || thisblockheight%1000 == 1)
-{
-
-    console.log(thisblockheight);
-    console.log("p: " + previoushash);
-    console.log("a1: " + sigblockhash);
-    console.log("a2: " + sigtokenhash);
-    console.log("a3: " + sigaddrhash);
-    console.log("a4: " + sigtrxhash);
-    console.log("h: " + fullhash);
-
-
-}
                                 
                             resolve(true);
         
@@ -1592,7 +1425,7 @@ console.log("Validating " + peerip + ":" + peerport + " at height " + blockheigh
 
 console.log("RingSig should be: " + ringsignature);
 
-                request.get(peerapiurl + '/getRingSignature/' + blockheight + '/' + peerport, {json:true}, function (error, response, body) 
+                request.get(peerapiurl + '/getRingSignature/' + blockheight + '/' + port, {json:true}, function (error, response, body) 
                 {
                 
                     if (error)
@@ -1615,7 +1448,7 @@ console.log("RingSig received is: " + body.ringsignature);
                             {
 console.log("Ring sig validated for peer: " + peerip + ":" + peerport);
                                 // Validated
-                                goodPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, height: blockheight};
+                                goodPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, lastCheckHeight: blockheight};
                                 delete unvalidatedPeers[peerip + ":" + peerport];
                                 delete badPeers[peerip + ":" + peerport];
                                 getPeers(peerip + ":" + peerport);
@@ -1626,7 +1459,7 @@ console.log("Ring sig validated for peer: " + peerip + ":" + peerport);
                             
                                 delete goodPeers[peerip + ":" + peerport];
                                 delete unvalidatedPeers[peerip + ":" + peerport];
-                                badPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, height: blockheight};
+                                badPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, lastCheckHeight: blockheight};
                             
                             }
                         
@@ -1721,9 +1554,7 @@ console.log("Checking peer: " + body.thisPeer);
             }
         
         }
-        
-        //testPeers();
-        
+                
     });
 
 }
