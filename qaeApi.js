@@ -52,9 +52,9 @@ const qae = new qaeSchema.default();
 
 // Declaring defaults
 var myIPAddress = '';
-var goodPeers = [];
-var badPeers = [];
-var unvalidatedPeers = [];
+var goodPeers = {};
+var badPeers = {};
+var unvalidatedPeers = {};
 var scanBlockId = 0;
 var lastBlockId = '';
 var sigblockhash = '';
@@ -1572,12 +1572,12 @@ console.log("Validating " + peerip + ":" + peerport + " at height " + blockheigh
         rclient.hget('qae_ringsignatures', blockheight, function(err, replytwo)
         {
         
-            if (reply)
+            if (replytwo)
             {
             
                 // This is what the peer hash should be
             
-                var ringsignature = crypto.createHash('sha256').update(peerip + reply).digest('hex');
+                var ringsignature = crypto.createHash('sha256').update(peerip + replytwo).digest('hex');
 
 console.log("RingSig should be: " + ringsignature);
 console.log("Debug should be: " + reply);
