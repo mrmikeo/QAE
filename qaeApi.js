@@ -693,7 +693,7 @@ router.route('/getRingSignature/:height')
             
                 var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
 
-                message = {ip: myIPAddress, port: port, height: height, ringsignature: ringsignature, debug: reply};
+                message = {ip: myIPAddress, port: port, height: height, ringsignature: ringsignature}; //, debug: reply};
             
                 res.json(message);
             
@@ -1580,17 +1580,16 @@ console.log("Validating " + peerip + ":" + peerport + " at height " + blockheigh
                 var ringsignature = crypto.createHash('sha256').update(peerip + replytwo).digest('hex');
 
 console.log("RingSig should be: " + ringsignature);
-console.log("Debug should be: " + reply);
 
-                request.get(peerapiurl + '/getRingSignature/' + blockheight + '/' + port, {json:true}, function (error, response, body) 
+                request.get(peerapiurl + '/getRingSignature/' + blockheight + '/' + peerport, {json:true}, function (error, response, body) 
                 {
                 
                     if (error)
                     {
                         // An error occurred, cannot validate
 console.log(error);                  
-                        delete goodPeers[peerip + ":" + port];
-                        unvalidatedPeers[peerip + ":" + port] = {ip: peerip, port: port};
+                        delete goodPeers[peerip + ":" + peerport];
+                        unvalidatedPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport};
                         
                     }
                     else
@@ -1599,21 +1598,20 @@ console.log(error);
                         {
 
 console.log("RingSig received is: " + body.ringsignature);
-console.log("Debug received is: " + body.debug);
 
                             if (body.ringsignature == ringsignature)
                             {
-console.log("Ring sig validated..");
+console.log("Ring sig validated for peer: " + peerip + ":" + peerport);
                                 // Validated
-                                goodPeers[peerip + ":" + port] = {ip: peerip, port: port, height: blockheight};
-                                getPeers(peerip + ":" + port);
+                                goodPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, height: blockheight};
+                                getPeers(peerip + ":" + peerport);
                             
                             }
                             else
                             {
                             
-                                delete goodPeers[peerip + ":" + port];
-                                badPeers[peerip + ":" + port] = {ip: peerip, port: port, height: blockheight};
+                                delete goodPeers[peerip + ":" + peerport];
+                                badPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, height: blockheight};
                             
                             }
                         
@@ -1624,8 +1622,8 @@ console.log("Ring sig validated..");
 console.log("Unable to validate at height: " + blockheight);
 
                             // Cannot validate
-                            delete goodPeers[peerip + ":" + port];
-                            unvalidatedPeers[peerip + ":" + port] = {ip: peerip, port: port};
+                            delete goodPeers[peerip + ":" + peerport];
+                            unvalidatedPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport};
                         
                         }
                     
@@ -1638,8 +1636,8 @@ console.log("Unable to validate at height: " + blockheight);
             {
 console.log("We do not have this ringsig: " + blockheight);
                 // Cannot validate this height
-                delete goodPeers[peerip + ":" + port];
-                unvalidatedPeers[peerip + ":" + port] = {ip: peerip, port: port};
+                delete goodPeers[peerip + ":" + peerport];
+                unvalidatedPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport};
                             
             }
             
