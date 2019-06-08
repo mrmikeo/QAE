@@ -190,10 +190,10 @@ router.route('/status')
     
         (async () => {
 
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
+            var mclient = await qdbapi.connect();
+            qdbapi.setClient(mclient);
 
-            var dlblocks = await qdb.findDocuments('blocks', {}, 1, {"height":-1}, 0);    
+            var dlblocks = await qdbapi.findDocuments('blocks', {}, 1, {"height":-1}, 0);    
                 
             await qdbapi.close();
             
