@@ -751,7 +751,11 @@ router.route('/getRingSignature/:height/:callerport')
         
         var callerip = getCallerIP(req).toString();
         
-        validatePeer(callerip, callerport);
+        if (!goodPeers[callerip + ":" + callerport] && !unvalidatedPeers[callerip + ":" + callerport])
+        {
+            unvalidatedPeers[callerip + ":" + callerport] = {ip: callerip, port: callerport};
+        }
+        //validatePeer(callerip, callerport);
         
     });
     
@@ -787,7 +791,7 @@ var intervalpeers = setInterval(function() {
 
     testPeers();
   
-}, 600000);
+}, 60000);
 
 function initialize()
 {
@@ -1576,6 +1580,7 @@ console.log("Validating " + peerip + ":" + peerport + " at height " + blockheigh
                 var ringsignature = crypto.createHash('sha256').update(peerip + reply).digest('hex');
 
 console.log("RingSig should be: " + ringsignature);
+console.log("Debug should be: " + reply);
 
                 request.get(peerapiurl + '/getRingSignature/' + blockheight + '/' + port, {json:true}, function (error, response, body) 
                 {
@@ -1594,6 +1599,7 @@ console.log(error);
                         {
 
 console.log("RingSig received is: " + body.ringsignature);
+console.log("Debug received is: " + body.debug);
 
                             if (body.ringsignature == ringsignature)
                             {
@@ -1701,7 +1707,7 @@ console.log("Checking peer: " + body.thisPeer);
         
         }
         
-        testPeers();
+        //testPeers();
         
     });
 
