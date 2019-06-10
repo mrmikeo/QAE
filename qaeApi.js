@@ -67,7 +67,7 @@ var processedItems = false;
 var gotSeedPeers = 0;
     
 // Trusted seed node
-var seedNode = 'https://qae.qredit.cloud/api/';
+var seedNode = iniconfig.seed_node;
 
 // Let us know when we connect or have an error with redis
 rclient.on('connect', function() {

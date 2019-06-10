@@ -6,5 +6,7 @@ redis_host = '127.0.0.1'
 
 api_port = 9876
 
+seed_node = 'https://qae.qredit.cloud/api/'
+
 error_from_email = ''
 error_to_email = ''
