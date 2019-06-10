@@ -25,7 +25,7 @@ const asyncv3     = require('async');            // Async Helper
 
 // Qredit API Library
 const qreditApi = require("./lib/qreditApi");
-const qapi = new qreditApi.default();
+const qapi = new qreditApi.default(iniconfig.api_node);
 
 var iniconfig = ini.parse(fs.readFileSync('/etc/qae/qae.ini', 'utf-8'))
 
