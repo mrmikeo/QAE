@@ -23,11 +23,11 @@ const publicIp    = require('public-ip');        // a helper to find out what ou
 const {promisify} = require('util');             // Promise functions
 const asyncv3     = require('async');            // Async Helper
 
+var iniconfig = ini.parse(fs.readFileSync('/etc/qae/qae.ini', 'utf-8'))
+
 // Qredit API Library
 const qreditApi = require("./lib/qreditApi");
 const qapi = new qreditApi.default(iniconfig.api_node);
-
-var iniconfig = ini.parse(fs.readFileSync('/etc/qae/qae.ini', 'utf-8'))
 
 // Mongo Connection Details
 const mongoconnecturl = iniconfig.mongo_connection_string;
