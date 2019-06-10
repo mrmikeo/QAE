@@ -18,18 +18,18 @@ const ini         = require('ini');              // so we can parse the ini file
 const Big         = require('big.js');           // required unless you want floating point math issues
 const nodemailer  = require('nodemailer');       // for sending error reports about this node
 const crypto      = require('crypto');           // for creating hashes of things
-const request     = require('request');
+const request     = require('request');          // Library for making http requests
 const publicIp    = require('public-ip');        // a helper to find out what our external IP is.   Needed for generating proper ring signatures
-const {promisify} = require('util');
-const asyncv3     = require('async');
+const {promisify} = require('util');             // Promise functions
+const asyncv3     = require('async');            // Async Helper
 
-// API Library
+// Qredit API Library
 const qreditApi = require("./lib/qreditApi");
 const qapi = new qreditApi.default();
 
 var iniconfig = ini.parse(fs.readFileSync('/etc/qae/qae.ini', 'utf-8'))
 
-// Connection URL
+// Mongo Connection Details
 const mongoconnecturl = iniconfig.mongo_connection_string;
 const mongodatabase = iniconfig.mongo_database;
 
@@ -38,7 +38,7 @@ const qaeDB = require("./lib/qaeDB");
 const qdb = new qaeDB.default(mongoconnecturl, mongodatabase); /* For internal processing */
 const qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase); /* For the API */
 
-// Connect to Redis
+// Connect to Redis and setup some async call definitions
 const rclient   = redis.createClient(iniconfig.redis_port, iniconfig.redis_host,{detect_buffers: true});
 const hgetAsync = promisify(rclient.hget).bind(rclient);
 const hsetAsync = promisify(rclient.hset).bind(rclient);
@@ -50,7 +50,7 @@ const delAsync  = promisify(rclient.del).bind(rclient);
 const qaeSchema = require("./lib/qaeSchema");
 const qae = new qaeSchema.default();
 
-// Declaring defaults
+// Declaring some variable defaults
 var myIPAddress = '';
 var goodPeers = {};
 var badPeers = {};
@@ -66,7 +66,7 @@ var fullhash = '';
 var processedItems = false;
 var gotSeedPeers = 0;
     
-
+// Trusted seed node
 var seedNode = 'https://qae.qredit.cloud/api/';
 
 // Let us know when we connect or have an error with redis
@@ -98,7 +98,7 @@ rclient.on('error',function() {
 })();
 */
 
-// Rescan Flag  (ie. node qaeApi.js true)
+// Rescan Flag  (ie. #node qaeApi.js true)
 
 if (process.argv.length == 3) 
 {
@@ -1264,7 +1264,7 @@ async function whilstScanBlocks(count, max, qdb)
                 
                     console.log("Block #" + count + " not found in database.. Removing any blocks above this height...");
                     
-                    //response = await qdb.removeDocuments('blocks', {"height": {"$gt": count}});
+                    response = await qdb.removeDocuments('blocks', {"height": {"$gt": count}});
                     
                     console.log("Removed " + response.result.n + " blocks from db.  Start this program again");
                     

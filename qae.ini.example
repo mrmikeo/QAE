@@ -6,7 +6,5 @@ redis_host = '127.0.0.1'
 
 api_port = 9876
 
-initial_height = 2858903
-
 error_from_email = ''
 error_to_email = ''
