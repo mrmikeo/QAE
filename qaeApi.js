@@ -1022,7 +1022,7 @@ function downloadChain(redownload = false)
             var fromHeight = (pagecount * perPage) + 1;
             var toHeight = fromHeight + (perPage - 1);
             pagecount++;
-            var bresponse = await qapi.searchBlocks(pagecount, 100, {"height": {"from": fromHeight, "to": toHeight }});
+            var bresponse = await qapi.searchBlocks(1, perPage, {"height": {"from": fromHeight, "to": toHeight }});
 
             resultcount = parseInt(bresponse.meta.count);
             
