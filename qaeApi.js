@@ -980,7 +980,7 @@ function downloadChain(redownload = false)
             if (exists == true)
             {
                 console.log("Removing all documents from 'blocks'");
-                response = await qdb.removeDocuments('blocks', {});
+                //response = await qdb.removeDocuments('blocks', {});
                 //console.log(response);
             }
             else
@@ -1009,7 +1009,7 @@ function downloadChain(redownload = false)
                 
         var pagecount = 0;
         var resultcount = 100;
-        
+        var perPage = 100;
         var mclient = await qdb.connect();
         qdb.setClient(mclient);     
         
@@ -1018,16 +1018,18 @@ function downloadChain(redownload = false)
         
             scanLockTimer = Math.floor(new Date() / 1000);
         
+            
+            var fromHeight = (pagecount * perPage) + 1;
+            var toHeight = fromHeight + (perPage - 1);
             pagecount++;
-        
-            var bresponse = await qapi.searchBlocks(pagecount, 100, {"height": {"from": scanBlockId, "to": currentHeight }});
+            var bresponse = await qapi.searchBlocks(pagecount, 100, {"height": {"from": fromHeight, "to": toHeight }});
 
             resultcount = parseInt(bresponse.meta.count);
             
             if (resultcount > 0)
             {
 
-                console.log("Downloading from " + parseInt(scanBlockId) + " Page " + pagecount);
+                console.log("Downloading from " + parseInt(fromHeight) + " to " + toHeight);
 
                 var blocks = bresponse.data;
 
