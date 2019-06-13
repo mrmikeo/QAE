@@ -1001,7 +1001,7 @@ function downloadChain(redownload = false)
         
         console.log('Downloading chain from block #' + topHeight + '.....');
         
-        var scanBlockId = topHeight + 1;
+        var startHeight = topHeight + 1;
 
         var currentHeight = await qapi.getBlockHeight();
          
@@ -1019,7 +1019,7 @@ function downloadChain(redownload = false)
             scanLockTimer = Math.floor(new Date() / 1000);
         
             
-            var fromHeight = (pagecount * perPage) + 1;
+            var fromHeight = (pagecount * perPage) + startHeight;
             var toHeight = fromHeight + (perPage - 1);
             pagecount++;
             var bresponse = await qapi.searchBlocks(1, perPage, {"height": {"from": fromHeight, "to": toHeight }});
