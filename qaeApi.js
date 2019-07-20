@@ -635,6 +635,7 @@ router.route('/tokensByOwner/:owner')
         
     });
 
+    
 router.route('/newblocknotify')
     .get(function(req, res) {
     
@@ -1003,7 +1004,7 @@ function downloadChain(redownload = false)
         
         console.log('Downloading chain from block #' + topHeight + '.....');
         
-        var scanBlockId = topHeight + 1;
+        var startHeight = topHeight + 1;
 
         var currentHeight = await qapi.getBlockHeight();
          
@@ -1011,6 +1012,7 @@ function downloadChain(redownload = false)
                 
         var pagecount = 0;
         var resultcount = 100;
+        var perPage = 100;
         
         var mclient = await qdb.connect();
         qdb.setClient(mclient);     
@@ -1020,16 +1022,19 @@ function downloadChain(redownload = false)
         
             scanLockTimer = Math.floor(new Date() / 1000);
         
+        	var fromHeight = (pagecount * perPage) + startHeight;
+            var toHeight = fromHeight + (perPage - 1);
+            
             pagecount++;
         
-            var bresponse = await qapi.searchBlocks(pagecount, 100, {"height": {"from": scanBlockId, "to": currentHeight }});
-
+			var bresponse = await qapi.searchBlocks(1, perPage, {"height": {"from": fromHeight, "to": toHeight }});
+			
             resultcount = parseInt(bresponse.meta.count);
             
             if (resultcount > 0)
             {
 
-                console.log("Downloading from " + parseInt(scanBlockId) + " Page " + pagecount);
+                console.log("Downloading from " + parseInt(fromHeight) + " to " + toHeight);
 
                 var blocks = bresponse.data;
 
