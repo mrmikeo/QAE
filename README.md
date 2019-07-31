@@ -54,6 +54,8 @@ na = Token Name  (String: 3-24 characters)
 du = Document URI  (String:  Max 32 characters)  (Optional)
 qt = Quantity (Integer)
 no = Notes  (String: Max 32 Characters)  (Optional)
+pa = Pausable (Boolean:  Default false)  (Optional)
+mi = Mintable (Boolean:  Default false)  (Optional)
 ```
 
 BURN:
