@@ -1006,14 +1006,21 @@ function downloadChain(redownload = false)
         
         var startHeight = topHeight + 1;
 
-        var currentHeight = await qapi.getBlockHeight();
-         
-        console.log('Current Blockchain Height: ' + currentHeight);
+        try {
+            var currentHeight = await qapi.getBlockHeight();
+		
+            console.log('Current Blockchain Height: ' + currentHeight);
                 
-        var pagecount = 0;
-        var resultcount = 100;
-        var perPage = 100;
-        
+            var pagecount = 0;
+            var resultcount = 100;
+            var perPage = 100;
+	} catch (e) {
+	    var currentHeight = 0;
+            var pagecount = 0;
+            var resultcount = 0;
+            var perPage = 100;
+	}
+
         var mclient = await qdb.connect();
         qdb.setClient(mclient);     
         
@@ -1022,14 +1029,17 @@ function downloadChain(redownload = false)
         
             scanLockTimer = Math.floor(new Date() / 1000);
         
-        	var fromHeight = (pagecount * perPage) + startHeight;
+            var fromHeight = (pagecount * perPage) + startHeight;
             var toHeight = fromHeight + (perPage - 1);
             
             pagecount++;
         
-			var bresponse = await qapi.searchBlocks(1, perPage, {"height": {"from": fromHeight, "to": toHeight }});
-			
-            resultcount = parseInt(bresponse.meta.count);
+	    try {
+	        var bresponse = await qapi.searchBlocks(1, perPage, {"height": {"from": fromHeight, "to": toHeight }});
+                resultcount = parseInt(bresponse.meta.count);
+	    } catch (e) {
+                resultcount = 0;  
+	    }
             
             if (resultcount > 0)
             {
@@ -1191,9 +1201,13 @@ async function whilstScanBlocks(count, max, qdb)
                         if (parseInt(blocktranscount) > 0)
                         {
                 
-                            var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
+			    try {
+                                var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
+			    } catch (e) {
+				var tresponse = null;
+			    }
                 
-                            if (tresponse.data)
+                            if (tresponse && tresponse.data)
                             {
                                 
                                 var trxcounter = 0;
@@ -1248,8 +1262,11 @@ async function whilstScanBlocks(count, max, qdb)
                                 });
                     
                             }
-                                
-                    
+			    else
+			    {
+                                // This needs to be handled.  TODO:  Missing transactions when there should be some
+			    }
+				
                         }
                         else
                         {
