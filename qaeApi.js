@@ -71,10 +71,6 @@ var gotSeedPeers = 0;
 var webhookToken = '';
 var webhookVerification = '';
 
-console.log(webhookTokenA);
-console.log(webhookTokenB);
-console.log(webhookToken);
-
 // Trusted seed node
 var seedNode = iniconfig.seed_node;
 
