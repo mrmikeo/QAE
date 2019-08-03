@@ -948,7 +948,7 @@ function initialize()
 			    console.log(body);
 				
 			    webhookToken = body.data.token;
-			    webhookVerification = webhookToken.substring(-32);
+			    webhookVerification = webhookToken.substring(31,32);
 		    
 		        });
                                                         
