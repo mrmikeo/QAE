@@ -1114,8 +1114,10 @@ function downloadChain(redownload = false)
 
         scanLock = false;
         scanLockTimer = 0;
-        
-        doScan();
+
+	setTimeout(function () {
+	    doScan();
+	}, 100);
         
     })();
 
