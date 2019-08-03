@@ -26,7 +26,7 @@ const asyncv3     = require('async');            // Async Helper
 var iniconfig = ini.parse(fs.readFileSync('/etc/qae/qae.ini', 'utf-8'))
 
 // Qredit API Library
-const qreditApi = require("./lib/qreditApi");
+const qreditApi = require("nodeQreditApi");
 const qapi = new qreditApi.default(iniconfig.api_node);
 
 // Mongo Connection Details
