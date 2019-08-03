@@ -919,9 +919,9 @@ function initialize()
                     
 		        // Create New Hook
 		        var postVars = {};
-		        postVars.event = 'block.forged';
+		        postVars.event = 'block.received';
 		        postVars.target = iniconfig.qae_webhook;
-	                postVars.conditions = 'truthy';
+	                postVars.conditions = [];
 			
 		        request.post(iniconfig.webhook_node + '/webhooks', {json:true, body: postVars}, function (error, response, body){
 		    
