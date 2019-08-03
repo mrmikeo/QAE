@@ -627,7 +627,9 @@ router.route('/newblocknotify')
 
         // This will be authorization + verification
         const token = authorization + webhookVerification;
-
+	
+console.log(authorization);
+console.log(webhookVerification);
 console.log(token);
 console.log(webhookToken);
 	
