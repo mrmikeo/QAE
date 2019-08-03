@@ -68,7 +68,7 @@ var processedItems = false;
 var gotSeedPeers = 0;
 
 // Generate Random Keys for Webhooks
-var webhookToken '';
+var webhookToken = '';
 var webhookVerification = '';
 
 console.log(webhookTokenA);
