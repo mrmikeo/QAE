@@ -68,10 +68,8 @@ var processedItems = false;
 var gotSeedPeers = 0;
 
 // Generate Random Keys for Webhooks
-const webhookTokenA = crypto.randomBytes(48).toString('hex').substring(0,32);
-const webhookTokenB = crypto.randomBytes(48).toString('hex').substring(0,32);
-const webhookToken = webhookTokenA + "" + webhookTokenB;
-const webhookVerification = webhookTokenB;
+var webhookToken '';
+var webhookVerification = '';
 
 console.log(webhookTokenA);
 console.log(webhookTokenB);
@@ -950,6 +948,9 @@ function initialize()
 		        request.post(iniconfig.webhook_node + '/webhooks', {json:true, body: postVars, header: {Authorization: webhookToken}}, function (error, response, body){
 		    
 			    console.log(body);
+				
+			    webhookToken = body.data.token;
+			    webhookVerification = webhookToken.substring(-32);
 		    
 		        });
                                                         
