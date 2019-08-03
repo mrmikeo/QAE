@@ -68,9 +68,8 @@ var processedItems = false;
 var gotSeedPeers = 0;
 
 // Generate Random Keys for Webhooks
-var webhookTokenA = crypto.randomBytes(32).toString('hex');
-var webhookTokenB = crypto.randomBytes(32).toString('hex');
-
+const webhookTokenA = crypto.randomBytes(48).toString('hex').substring(0,32);
+const webhookTokenB = crypto.randomBytes(48).toString('hex').substring(0,32);
 const webhookToken = webhookTokenA + "" + webhookTokenB;
 const webhookVerification = webhookTokenB;
 
