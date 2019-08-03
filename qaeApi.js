@@ -627,13 +627,7 @@ router.route('/newblocknotify')
 
         // This will be authorization + verification
         const token = authorization + webhookVerification;
-	
-console.log(authorization);
-console.log(webhookVerification);
-console.log(token);
-console.log(webhookToken);
-	
-	
+
         // Make sure we block access if the token is invalid...
         if (token !== webhookToken) {
             return res.status(401).send("Unauthorized!");
