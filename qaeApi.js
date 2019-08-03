@@ -892,6 +892,9 @@ function initialize()
 		// Create Webhooks
 		if (iniconfig.webhooks_enabled == true || iniconfig.webhooks_enabled == 1)
 		{
+			
+	            console.log("Creating Webhook");
+			
                     request.get(iniconfig.webhook_node + '/webhooks', {json:true}, function (error, response, body)
                     {
 
@@ -1423,7 +1426,7 @@ function newblocknotify()
     {
         // TODO:  Check if it is a stale lock
         var currentUnixTime = Math.floor(new Date() / 1000);
-        if (scanLockTimer < (currentUnixTime - 900))
+        if (scanLockTimer < (currentUnixTime - iniconfig.scanlock_staletime))
         {
             // force unlock
             console.log("Forcing scanlock Unlock....");
