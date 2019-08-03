@@ -923,7 +923,7 @@ function initialize()
 		        postVars.target = iniconfig.qae_webhook;
 	                postVars.conditions = 'truthy';
 			
-		        request.post(iniconfig.webhook_node + '/webhooks/' + hookId, {json:true, body: postVars}, function (error, response, body){
+		        request.post(iniconfig.webhook_node + '/webhooks', {json:true, body: postVars}, function (error, response, body){
 		    
 			    console.log(body);
 		    
