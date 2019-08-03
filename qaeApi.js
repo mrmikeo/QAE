@@ -1059,7 +1059,9 @@ function downloadChain(redownload = false)
 	    try {
 	        var bresponse = await qapi.searchBlocks(1, perPage, {"height": {"from": fromHeight, "to": toHeight }});
                 resultcount = parseInt(bresponse.meta.count);
+		console.log("Result Count: " + resultcount);
 	    } catch (e) {
+		console.log(e);
                 resultcount = 0;  
 	    }
             
