@@ -890,7 +890,7 @@ function initialize()
                 scanBlocks(false, false);
 		    
 		// Create Webhooks
-		if (iniconfig.webhooks_enabled == true || iniconfig.webhooks_enabled == 1)
+		if (iniconfig.webhooks_enabled == 1)
 		{
 			
 	            console.log("Creating Webhook");
