@@ -921,7 +921,7 @@ function initialize()
 		        var postVars = {};
 		        postVars.event = 'block.applied';
 		        postVars.target = iniconfig.qae_webhook;
-	                postVars.conditions = [];
+	                postVars.conditions = [{key:'height', condition: 'gt', value: 0}];
 			
 		        request.post(iniconfig.webhook_node + '/webhooks', {json:true, body: postVars}, function (error, response, body){
 		    
