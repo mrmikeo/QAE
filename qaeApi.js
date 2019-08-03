@@ -919,7 +919,7 @@ function initialize()
                     
 		        // Create New Hook
 		        var postVars = {};
-		        postVars.event = 'block.received';
+		        postVars.event = 'block.forged';
 		        postVars.target = iniconfig.qae_webhook;
 	                postVars.conditions = [];
 			
