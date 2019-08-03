@@ -8,7 +8,11 @@ api_port = 9876
 
 seed_node = 'https://qae.qredit.cloud/api/'
 api_node = 'https://qredit.cloud/api/v2'
+
+webhooks_enabled = true
 webhook_node = 'http://127.0.0.1:4104/api'
+
+polling_interval = 120
 
 error_from_email = ''
 error_to_email = ''
