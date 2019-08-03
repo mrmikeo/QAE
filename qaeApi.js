@@ -66,7 +66,18 @@ var previoushash = '';
 var fullhash = '';
 var processedItems = false;
 var gotSeedPeers = 0;
-    
+
+// Generate Random Keys for Webhooks
+var webhookTokenA = crypto.randomBytes(32).toString('hex');
+var webhookTokenB = crypto.randomBytes(32).toString('hex');
+
+const webhookToken = webhookTokenA + "" + webhookTokenB;
+const webhookVerification = webhookTokenB;
+
+console.log(webhookTokenA);
+console.log(webhookTokenB);
+console.log(webhookToken);
+
 // Trusted seed node
 var seedNode = iniconfig.seed_node;
 
@@ -617,8 +628,22 @@ router.route('/tokensByOwner/:owner')
 
     
 router.route('/newblocknotify')
-    .get(function(req, res) {
-    
+    .post(function(req, res) {
+
+        const authorization = req.headers["authorization"];
+
+        // This will be authorization + verification
+        const token = authorization + webhookVerification;
+
+console.log(token);
+console.log(webhookToken);
+	
+	
+        // Make sure we block access if the token is invalid...
+        if (token !== webhookToken) {
+            return res.status(401).send("Unauthorized!");
+        }
+	
         updateaccessstats(req);
         
         newblocknotify();
@@ -631,7 +656,7 @@ router.route('/newblocknotify')
     
 router.route('/peerinfo')
     .get(function(req, res) {
-    
+
         updateaccessstats(req);
         
         var thisPeer = myIPAddress + ":" + port;
@@ -923,7 +948,7 @@ function initialize()
 		        postVars.target = iniconfig.qae_webhook;
 	                postVars.conditions = [{key:'height', condition: 'gt', value: 0}];
 			
-		        request.post(iniconfig.webhook_node + '/webhooks', {json:true, body: postVars}, function (error, response, body){
+		        request.post(iniconfig.webhook_node + '/webhooks', {json:true, body: postVars, header: {Authorization: webhookToken}}, function (error, response, body){
 		    
 			    console.log(body);
 		    
