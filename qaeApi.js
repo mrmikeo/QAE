@@ -787,13 +787,17 @@ router.route('*')
 // all of our routes will be prefixed with /api
 app.use('/api', router);
 
-
+// Initialze things
 initialize();
 
 // Failsafe
 var interval = setInterval(function() {
 
-    newblocknotify();
+    var currentIntervalTime = Math.floor(new Date() / 1000);
+    if (lastBlockNotify < (currentIntervalTime - iniconfig.polling_interval))
+    {
+        newblocknotify();
+    }
   
 }, iniconfig.polling_interval * 1000);
 
@@ -1446,6 +1450,8 @@ function processRingSignatures(thisblockheight, processedItems, qdb)
 function newblocknotify()
 {
 
+    lastBlockNotify = Math.floor(new Date() / 1000);
+	
     console.log('New Block Notify..');
 
     if (scanLock == true)
