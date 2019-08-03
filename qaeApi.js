@@ -79,27 +79,6 @@ rclient.on('error',function() {
     error_handle("Error in Redis", 'redisConnection');
 });
 
-
-// debugging - remove afterwards
-/*
-(async () => {
-
-    var mclient = await qdb.connect();
-    qdb.setClient(mclient);
-            
-    await delAsync('qae_lastscanblock');
-    await delAsync('qae_lastblockid');
-    await delAsync('qae_ringsignatures');
-    await qdb.removeDocuments('blocks', {});
-    await qdb.removeDocuments('tokens', {});
-    await qdb.removeDocuments('addresses', {});
-    await qdb.removeDocuments('transactions', {});
-    
-    await qdb.close();
-
-})();
-*/
-
 // Rescan Flag  (ie. #node qaeApi.js true)
 
 if (process.argv.length == 3) 
@@ -790,12 +769,12 @@ app.use('/api', router);
 
 initialize();
 
-// Check every 30 seconds 
+// Failsafe
 var interval = setInterval(function() {
 
     newblocknotify();
   
-}, 8000);
+}, iniconfig.polling_interval * 1000);
 
 
 var intervalpeers = setInterval(function() {
@@ -909,6 +888,46 @@ function initialize()
                 console.log("This IP Address is: " + myIPAddress);
 
                 scanBlocks(false, false);
+		    
+		// Create Webhooks
+		if (iniconfig.webhooks_enabled == true || iniconfig.webhooks_enabled == 1)
+		{
+                    request.get(iniconfig.webhook_node + '/webhooks', {json:true}, function (error, response, body)
+                    {
+
+		        if (body && body.data)
+		        {
+			    
+		    	    var currentWebhooks = body.data;
+			    
+			    currentWebhooks.forEach( (row) => { 
+				
+			        if (row.target == iniconfig.qae_webhook)
+			        {
+		                    var hookId = row.id;
+				    console.log("Delete Webhook #" + hookId);
+                                    request.delete(iniconfig.webhook_node + '/webhooks/' + hookId, {json:true}, function (error, response, body){});    
+			        }
+			    
+			    });
+			    
+		        }
+                    
+		        // Create New Hook
+		        var postVars = {};
+		        postVars.event = 'block.forged';
+		        postVars.target = iniconfig.qae_webhook;
+	                postVars.conditions = 'truthy';
+			
+		        request.post(iniconfig.webhook_node + '/webhooks/' + hookId, {json:true, body: postVars}, function (error, response, body){
+		    
+			    console.log(body);
+		    
+		        });
+                                                        
+                    });
+			
+		}
         
             })();
             
