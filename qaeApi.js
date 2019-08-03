@@ -1046,7 +1046,7 @@ function downloadChain(redownload = false)
         
         }
         
-        console.log('Downloading chain from block #' + topHeight + '.....');
+        console.log('QAE Current Top Height #' + topHeight + '.....');
         
         var startHeight = topHeight + 1;
 
