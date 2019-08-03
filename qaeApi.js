@@ -49,6 +49,7 @@ const delAsync  = promisify(rclient.del).bind(rclient);
 // QAE-1 Token Schema
 const qaeSchema = require("./lib/qaeSchema");
 const qae = new qaeSchema.default();
+const activationHeight = 2859480;
 
 // Declaring some variable defaults
 var myIPAddress = '';
@@ -1222,7 +1223,7 @@ async function whilstScanBlocks(count, max, qdb)
                             
                         processedItems = false;
 
-                        if (parseInt(blocktranscount) > 0)
+                        if (parseInt(blocktranscount) > 0 && thisblockheight >= activationHeight)
                         {
                 
 			    try {
