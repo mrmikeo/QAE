@@ -358,7 +358,7 @@ router.route('/balance/:tokenid/:address')
 
             await qdbapi.close();
             
-            if (message.tokenBalance)
+            if (message && message.tokenBalance)
             {
             
                 var humanbal = new Big(message.tokenBalance).div(Big(10).pow(message.tokenDecimals)).toFixed(message.tokenDecimals);
