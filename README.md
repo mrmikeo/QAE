@@ -13,6 +13,20 @@ apt-get install redis-server
 
 ```
 
+Enable Webhooks in your Qredit Node:
+
+```
+vi .config/qredit-core/mainnet/.env
+```
+
+Make sure the env file has these items:
+
+```
+CORE_WEBHOOKS_ENABLED=true
+CORE_WEBHOOKS_HOST=0.0.0.0
+CORE_WEBHOOKS_PORT=4104
+```
+
 Clone the repository and run:
 
 ```
