@@ -22,12 +22,14 @@ const request     = require('request');          // Library for making http requ
 const publicIp    = require('public-ip');        // a helper to find out what our external IP is.   Needed for generating proper ring signatures
 const {promisify} = require('util');             // Promise functions
 const asyncv3     = require('async');            // Async Helper
+const { Client }  = require('pg');               // Postgres
+const qreditjs    = require("qreditjs");
 
 var iniconfig = ini.parse(fs.readFileSync('/etc/qae/qae.ini', 'utf-8'))
 
-// Qredit API Library
-const qreditApi = require("nodeQreditApi");
-const qapi = new qreditApi.default(iniconfig.api_node);
+// Qredit API Library  TODO no longer needed
+//const qreditApi = require("nodeQreditApi");
+//const qapi = new qreditApi.default(iniconfig.api_node);
 
 // Mongo Connection Details
 const mongoconnecturl = iniconfig.mongo_connection_string;
@@ -66,6 +68,7 @@ var previoushash = '';
 var fullhash = '';
 var processedItems = false;
 var gotSeedPeers = 0;
+var lastBlockNotify = Math.floor(new Date() / 1000);
 
 // Generate Random Keys for Webhooks
 var webhookToken = '';
@@ -93,53 +96,15 @@ if (process.argv.length == 3)
     {
         (async () => {
         
-console.log("forcing a rescan....");
+        	console.log("--------------------");
+			console.log("Forcing a Rescan....");
+        	console.log("--------------------");
 
             await delAsync('qae_lastscanblock');
             await delAsync('qae_lastblockid');
             await delAsync('qae_ringsignatures');
         
         
-        })();
-        
-    }
-    
-}
-
-// Redownload Flag  (ie. node qaeApi.js false true)
-
-if (process.argv.length == 4) 
-{
-
-    if (process.argv[3] == '1' || process.argv[3] == 'true')
-    {
-        (async () => {
-        
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
-
-            exists = await qdb.doesCollectionExist('blocks');
-            console.log("Does collection 'blocks' Exist: " + exists);
-            if (exists == true)
-            {
-                console.log("Removing all documents from 'blocks'");
-                response = await qdb.removeDocuments('blocks', {});
-                //console.log(response);
-            }
-            else
-            {
-                console.log("Creating new collection 'blocks'");
-                response = await qdb.createCollection('blocks', {});
-                //console.log(response);
-            }
-    
-            response = await qdb.createIndex('blocks', {"id": 1}, true);
-            response = await qdb.createIndex('blocks', {"height": 1}, false);
-
-            topHeight = 0;
-            
-            await qdb.close();
-
         })();
         
     }
@@ -175,19 +140,18 @@ router.route('/status')
     .get(function(req, res) {
     
         (async () => {
+            
+            var pgclient = new Client({user: iniconfig.pg_username, database: iniconfig.pg_database, password: iniconfig.pg_password});
 
-            var mclient = await qdbapi.connect();
-            qdbapi.setClient(mclient);
-
-            var dlblocks = await qdbapi.findDocuments('blocks', {}, 1, {"height":-1}, 0);    
-                
-            await qdbapi.close();
+			await pgclient.connect()
+			var dlblocks = await pgclient.query('SELECT * FROM blocks ORDER BY height DESC LIMIT 1')
+			await pgclient.end()
             
             var scanned = await getAsync('qae_lastscanblock');
             
-            if (dlblocks && dlblocks[0])
+            if (dlblocks && dlblocks.rows)
             {
-                var downloadedblocks = dlblocks[0].height;
+                var downloadedblocks = dlblocks.rows[0].height;
             }
             else
             {
@@ -863,16 +827,6 @@ function initialize()
                     console.log("Creating new collection 'transactions'");
                     await qdb.createCollection('transactions', {});
                 }
-                
-                var redownload = false;
-                
-                exists = await qdb.doesCollectionExist('blocks');
-                if (exists != true)
-                {
-                
-                    redownload = true;
-                
-                }
 
                 await qdb.close();
                 
@@ -881,13 +835,11 @@ function initialize()
                 app.listen(port);
                 console.log('Magic happens on Port:' + port);
 
-
                 myIPAddress = await publicIp.v4();
                         
                 console.log("This IP Address is: " + myIPAddress);
 
-                scanBlocks(true, redownload);
-                
+                scanBlocks(true);
         
             })();
         
@@ -908,51 +860,51 @@ function initialize()
 
                 scanBlocks(false, false);
 		    
-		// Create Webhooks
-		if (iniconfig.webhooks_enabled == 1)
-		{
+				// Create Webhooks
+				if (iniconfig.webhooks_enabled == 1)
+				{
 			
-	            console.log("Creating Webhook");
+	            	console.log("Creating Webhook");
 			
                     request.get(iniconfig.webhook_node + '/webhooks', {json:true}, function (error, response, body)
                     {
 
-		        if (body && body.data)
-		        {
+		        		if (body && body.data)
+		        		{
 			    
-		    	    var currentWebhooks = body.data;
+		    	    		var currentWebhooks = body.data;
 			    
-			    currentWebhooks.forEach( (row) => { 
+			    			currentWebhooks.forEach( (row) => { 
 				
-			        if (row.target == iniconfig.qae_webhook)
-			        {
-		                    var hookId = row.id;
-				    console.log("Delete Webhook #" + hookId);
+			        			if (row.target == iniconfig.qae_webhook)
+			        			{
+		                    		var hookId = row.id;
+				    				console.log("Delete Webhook #" + hookId);
                                     request.delete(iniconfig.webhook_node + '/webhooks/' + hookId, {json:true}, function (error, response, body){});    
-			        }
+			        			}
 			    
-			    });
+			    			});
 			    
-		        }
+		        		}
                     
-		        // Create New Hook
-		        var postVars = {};
-		        postVars.event = 'block.applied';
-		        postVars.target = iniconfig.qae_webhook;
-	                postVars.conditions = [{key:'height', condition: 'gt', value: 0}];
+		        		// Create New Hook
+		        		var postVars = {};
+		        		postVars.event = 'block.applied';
+		        		postVars.target = iniconfig.qae_webhook;
+	            		postVars.conditions = [{key:'height', condition: 'gt', value: 0}];
 			
-		        request.post(iniconfig.webhook_node + '/webhooks', {json:true, body: postVars, header: {Authorization: webhookToken}}, function (error, response, body){
+		        		request.post(iniconfig.webhook_node + '/webhooks', {json:true, body: postVars, header: {Authorization: webhookToken}}, function (error, response, body){
 		    
-			    console.log(body);
+			    			console.log(body);
 				
-			    webhookToken = body.data.token;
-			    webhookVerification = webhookToken.substring(32);
+			    			webhookToken = body.data.token;
+			    			webhookVerification = webhookToken.substring(32);
 		    
-		        });
+		        		});
                                                         
-                    });
+                	});
 			
-		}
+				}
         
             })();
             
@@ -965,7 +917,7 @@ function initialize()
 // Main Functions
 // ==========================
 
-function scanBlocks(reindex = false, redownload = false)
+function scanBlocks(reindex = false) //, redownload = false)
 {
 
     if (reindex == true)
@@ -976,7 +928,7 @@ function scanBlocks(reindex = false, redownload = false)
 
             await qae.indexDatabase(qdb);
             
-            downloadChain(redownload);
+            downloadChain();
 
         })();
         
@@ -984,140 +936,40 @@ function scanBlocks(reindex = false, redownload = false)
     else
     {
     
-        downloadChain(redownload);
+        downloadChain();
 
     }
 
 }
 
 
-function downloadChain(redownload = false)
+function downloadChain()
 {
 
     scanLock = true;
     scanLockTimer = Math.floor(new Date() / 1000);
     
     (async () => {
-
-        if (redownload == false)
-        {
-
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
-            message = await qdb.findDocuments('blocks', {}, 1, {"height":-1}, 0);
-
-            await qdb.close();  
-        
-            var topHeight = 0;
-            if (message[0] && message[0].height)
-            {
-                var topHeight = message[0].height;
-                lastBlockId = message[0].id;
-            }
-        
-        }
-        else
-        {
-        
-            var mclient = await qdb.connect();
-            qdb.setClient(mclient);
-
-            exists = await qdb.doesCollectionExist('blocks');
-            console.log("Does collection 'blocks' Exist: " + exists);
-            if (exists == true)
-            {
-                console.log("Removing all documents from 'blocks'");
-                response = await qdb.removeDocuments('blocks', {});
-                //console.log(response);
-            }
-            else
-            {
-                console.log("Creating new collection 'blocks'");
-                response = await qdb.createCollection('blocks', {});
-                //console.log(response);
-            }
-    
-            response = await qdb.createIndex('blocks', {"id": 1}, true);
-            response = await qdb.createIndex('blocks', {"height": 1}, false);
-
-            topHeight = 0;
             
-            await qdb.close();
+        var pgclient = new Client({user: iniconfig.pg_username, database: iniconfig.pg_database, password: iniconfig.pg_password});
+		await pgclient.connect()
+		var message = await pgclient.query('SELECT * FROM blocks ORDER BY height DESC LIMIT 1')
+		await pgclient.end()
+            
         
+        var topHeight = 0;
+        if (message && message.rows && message.rows[0].height)
+        {
+            var topHeight = message.rows[0].height;
+            lastBlockId = message.rows[0].id;
         }
         
         console.log('QAE Current Top Height #' + topHeight + '.....');
-        
-        var startHeight = topHeight + 1;
-
-        try {
-            var currentHeight = await qapi.getBlockHeight();
-		
-            console.log('Current Blockchain Height: ' + currentHeight);
-                
-            var pagecount = 0;
-            var resultcount = 100;
-            var perPage = 100;
-	} catch (e) {
-	    var currentHeight = 0;
-            var pagecount = 0;
-            var resultcount = 0;
-            var perPage = 100;
-	}
-
-        var mclient = await qdb.connect();
-        qdb.setClient(mclient);     
-        
-        while (resultcount > 0)
-        {
-        
-            scanLockTimer = Math.floor(new Date() / 1000);
-        
-            var fromHeight = (pagecount * perPage) + startHeight;
-            var toHeight = fromHeight + (perPage - 1);
-            
-            pagecount++;
-        
-	    try {
-	        var bresponse = await qapi.searchBlocks(1, perPage, {"height": {"from": fromHeight, "to": toHeight }});
-                resultcount = parseInt(bresponse.meta.count);
-		console.log("Result Count: " + resultcount);
-	    } catch (e) {
-		console.log(e);
-                resultcount = 0;  
-	    }
-            
-            if (resultcount > 0)
-            {
-
-                console.log("Downloading from " + parseInt(fromHeight) + " to " + toHeight);
-
-                var blocks = bresponse.data;
-
-                blocks.forEach(function(item) {
-                
-                    (async () => {
-                
-                        if (item.height > topHeight) topHeight = item.height;
-        
-                        await qdb.insertDocuments('blocks', item);
-                    
-                    })();
-        
-                });
-            
-            }
-                        
-        }
-        
-        await qdb.close();
 
         scanLock = false;
         scanLockTimer = 0;
 
-	setTimeout(function () {
 	    doScan();
-	}, 100);
         
     })();
 
@@ -1171,29 +1023,30 @@ function doScan()
 
                 var currentHeight = 0;
 
-                var mclient = await qdb.connect();
-                qdb.setClient(mclient);
+				var pgclient = new Client({user: iniconfig.pg_username, database: iniconfig.pg_database, password: iniconfig.pg_password});
+				await pgclient.connect()
+				var message = await pgclient.query('SELECT * FROM blocks ORDER BY height DESC LIMIT 1');
 
-                message = await qdb.findDocuments('blocks', {}, 1, {"height":-1}, 0);           
-            
-                if (message && message[0].height) currentHeight = parseInt(message[0].height);
+                if (message && message.rows) currentHeight = parseInt(message.rows[0].height);
             
                 console.log('Current Blockchain Height: ' + currentHeight);
-                                
-                await whilstScanBlocks(scanBlockId, currentHeight, qdb);
+
+                var mclient = await qdb.connect();
+                qdb.setClient(mclient);
+                
+                await whilstScanBlocks(scanBlockId, currentHeight, pgclient, qdb);
+                
                                     
             })();
-    
 
         });
     
-    
     });
-    
 
 }
 
-async function whilstScanBlocks(count, max, qdb)
+
+async function whilstScanBlocks(count, max, pgclient, qdb)
 {
 
     asyncv3.whilst(
@@ -1207,22 +1060,22 @@ async function whilstScanBlocks(count, max, qdb)
                 scanLockTimer = Math.floor(new Date() / 1000);
                                         
                 if (count%1000 == 0) console.log("Scanning: " + count);
-            
-                message = await qdb.findDocument('blocks', {"height": count});
                 
-                if (message)
+                var message = await pgclient.query('SELECT * FROM blocks WHERE height = $1 LIMIT 1', [count]);
+                            
+                if (message && message.rows)
                 {
 
-                    var blockdata = message;
+                    var blockdata = message.rows[0];
 
                     if (blockdata && blockdata.id)
                     {
 
                         var blockidcode = blockdata.id;
-                        var blocktranscount = blockdata.transactions;
+                        var blocktranscount = blockdata.number_of_transactions;
                         var thisblockheight = blockdata.height;
                     
-                        var previousblockid = blockdata.previous;
+                        var previousblockid = blockdata.previous_block;
 
                         if (lastBlockId != previousblockid && thisblockheight > 1)
                         {
@@ -1249,20 +1102,47 @@ async function whilstScanBlocks(count, max, qdb)
                         if (parseInt(blocktranscount) > 0 && thisblockheight >= activationHeight)
                         {
                 
-			    try {
-                                var tresponse = await qapi.getTransactionsByBlockID(blockidcode);
-			    } catch (e) {
-				var tresponse = null;
-			    }
+			    			try {
+                                var tresponse = await pgclient.query('SELECT * FROM transactions WHERE block_id = $1 ORDER BY sequence ASC', [blockidcode]);
+			    			} catch (e) {
+								var tresponse = null;
+			    			}
                 
-                            if (tresponse && tresponse.data)
+                            if (tresponse && tresponse.rows)
                             {
                                 
                                 var trxcounter = 0;
                                                                 
-                                tresponse.data.forEach( (txdata) => {
+                                tresponse.rows.forEach( (origtxdata) => {
                         
                                     (async () => {
+                                    
+										var epochdate = new Date(Date.parse('2017-03-21 13:00:00'));
+										var unixepochtime = Math.round(epochdate.getTime()/1000);
+										
+										var unixtimestamp = parseInt(origtxdata.timestamp) + unixepochtime;
+										var humantimestamp = new Date(unixtimestamp * 1000).toISOString();
+                                    
+                                    	var txdata = {};
+                                    	txdata.id = origtxdata.id
+                                    	txdata.blockId = origtxdata.block_id;
+                                    	txdata.version = origtxdata.version;
+                                    	txdata.type = origtxdata.type;
+                                    	txdata.amount = origtxdata.amount;
+                                    	txdata.fee = origtxdata.fee;
+                                    	txdata.sender = qreditjs.crypto.getAddress(origtxdata.sender_public_key);
+                                    	txdata.senderPublicKey = origtxdata.sender_public_key;
+                                    	txdata.recipient = origtxdata.recipient_id
+                                    	if (origtxdata.vendor_field_hex != null && origtxdata.vendor_field_hex != '')
+                                    	{
+                                    		txdata.vendorField = hex_to_ascii(origtxdata.vendor_field_hex.toString());
+                                    	}
+                                    	else
+                                    	{
+                                    		txdata.vendorField = null;
+                                    	}
+                                    	txdata.confirmations = parseInt(max) - parseInt(thisblockheight);
+                                    	txdata.timestamp = {epoch: origtxdata.timestamp, unix: unixtimestamp, human: humantimestamp};
                                         
                                         trxcounter++;
                         
@@ -1280,6 +1160,9 @@ async function whilstScanBlocks(count, max, qdb)
                             
                                             if (isjson === true)
                                             {
+                                            
+console.log(txdata);
+                                            
                                                 var parsejson = JSON.parse(txdata.vendorField);
                                             
                                                 if (parsejson.qae1)
@@ -1293,10 +1176,10 @@ async function whilstScanBlocks(count, max, qdb)
                             
                                         }
                                             
-                                        if (trxcounter == tresponse.data.length)
+                                        if (trxcounter == tresponse.rows.length)
                                         {
                                             
-                                            await processRingSignatures(thisblockheight, processedItems, qdb);
+                                            await processRingSignatures(thisblockheight, processedItems, pgclient, qdb);
 
                                             await setAsync('qae_lastscanblock', thisblockheight);
                                             await setAsync('qae_lastblockid', blockidcode);
@@ -1310,16 +1193,16 @@ async function whilstScanBlocks(count, max, qdb)
                                 });
                     
                             }
-			    else
-			    {
+			    			else
+			    			{
                                 // This needs to be handled.  TODO:  Missing transactions when there should be some
-			    }
+			    			}
 				
                         }
                         else
                         {
                             
-                            await processRingSignatures(thisblockheight, false, qdb);
+                            await processRingSignatures(thisblockheight, false, pgclient, qdb);
 
                             await setAsync('qae_lastscanblock', thisblockheight);
                             await setAsync('qae_lastblockid', blockidcode);
@@ -1334,12 +1217,7 @@ async function whilstScanBlocks(count, max, qdb)
                 else
                 {
                 
-                    console.log("Block #" + count + " not found in database.. Removing any blocks above this height...");
-                    
-                    response = await qdb.removeDocuments('blocks', {"height": {"$gt": count}});
-                    
-                    console.log("Removed " + response.result.n + " blocks from db.  Start this program again");
-                    
+                    console.log("Block #" + count + " not found in database.. This is a fatal error...");
                     process.exit(-1);
                 
                 }
@@ -1353,6 +1231,7 @@ async function whilstScanBlocks(count, max, qdb)
             (async () => {
             
                 await qdb.close();
+                await pgclient.end()
                 
                 scanLock = false;
                 scanLockTimer = 0;
@@ -1375,7 +1254,7 @@ async function whilstScanBlocks(count, max, qdb)
 
 }
 
-function processRingSignatures(thisblockheight, processedItems, qdb)
+function processRingSignatures(thisblockheight, processedItems, pgclient, qdb)
 {
 
     return new Promise(resolve => {
@@ -1396,8 +1275,10 @@ function processRingSignatures(thisblockheight, processedItems, qdb)
                         {               
 
                             // Only check if new things were processed or we have empty vars
+                            
+							var message = await pgclient.query('SELECT * FROM blocks WHERE height = $1 LIMIT 1', [thisblockheight]);
                                                 
-                            sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
+                            sigblockhash = message.rows[0].id;
                             sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
                             sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
                             sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
@@ -1422,8 +1303,10 @@ function processRingSignatures(thisblockheight, processedItems, qdb)
             {
             
                 // First Block
+                
+				var message = await pgclient.query('SELECT * FROM blocks WHERE height = $1 LIMIT 1', [thisblockheight]);
 
-                sigblockhash = await qdb.findDocumentHash('blocks', {"height": {$lte: thisblockheight}}, "id", {"id":-1});
+                sigblockhash =  message.rows[0].id;
                 sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
                 sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
                 sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
@@ -1738,6 +1621,16 @@ function updateaccessstats(req) {
 // Helpers
 // ==========================
 
+function hex_to_ascii(str1)
+ {
+	var hex  = str1.toString();
+	var str = '';
+	for (var n = 0; n < hex.length; n += 2) {
+		str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
+	}
+	return str;
+ }
+ 
 function getCallerIP(request) 
 {
     var ip = request.connection.remoteAddress ||
