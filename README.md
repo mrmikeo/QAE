@@ -1,14 +1,9 @@
-# QAE
+# QAE  -- Version 0.2
 Qredit Always Evolving Tokens
 
 An API extension for the Qredit network to integrate Simple Token issuance and management
 
-Currently tested on Nodejs v9.11.2
-
-```
-curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
-sudo apt-get install -y nodejs
-```
+This must be running on a Qredit Relay or Full node.
 
 Install Mongodb & Redis:  (Default settings are fine for testing)
 
@@ -18,13 +13,13 @@ apt-get install redis-server
 
 ```
 
-Clone the repository, install pages, set config, and run:
+Clone the repository and run:
 
 ```
 npm install
 mkdir /etc/qae/
 cp qae.ini.example /etc/qae/qae.ini
-node qaeApi.js
+node qaeApiV2.js
 ```
 
 The server runs on the port set in the ini file.
