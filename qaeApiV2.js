@@ -54,7 +54,7 @@ const qae = new qaeSchema.default();
 
 const qaeactivationHeight = 2859480;
 const qaeactivationBlockId = 'c36c7920a5194e67c646145c54051d22f9b2f192cf458da8683e34af4a1582ac';
-const qaeactivationRingSig = 'cf7bd99a9f926f760e3481cde66dcb5f74d2f8403f0459b97537f989abbe9e1e';
+const qaeactivationRingSig = 'd09a4678959edd868a6d96dfdff286c43b0d3264193af20eb56a808e8a0b1397';
 
 // Declaring some variable defaults
 var myIPAddress = '';
@@ -1282,18 +1282,9 @@ function processRingSignatures(thisblockheight, processedItems, pgclient, qdb)
             else
             {
             
-                // First Block
-                
-				//var message = await pgclient.query('SELECT * FROM blocks WHERE height = $1 LIMIT 1', [thisblockheight]);
+                // First Block @ QAE Activation
 
-                //sigblockhash =  message.rows[0].id;
-                //sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
-                //sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
-                //sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
-            
-                fullhash = qaeactivationRingSig; //crypto.createHash('sha256').update(sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
-
-console.log("activation hash @ " + thisblockheight + ": " + fullhash);
+                fullhash = qaeactivationRingSig;
                 
                 await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
                                 
