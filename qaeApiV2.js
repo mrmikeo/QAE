@@ -51,7 +51,10 @@ const delAsync  = promisify(rclient.del).bind(rclient);
 // QAE-1 Token Schema
 const qaeSchema = require("./lib/qaeSchema");
 const qae = new qaeSchema.default();
-const activationHeight = 2859480;
+
+const qaeactivationHeight = 2859480;
+const qaeactivationRingSig = 'cf7bd99a9f926f760e3481cde66dcb5f74d2f8403f0459b97537f989abbe9e1e';
+const qaeactivationBlockId = 'c36c7920a5194e67c646145c54051d22f9b2f192cf458da8683e34af4a1582ac';
 
 // Declaring some variable defaults
 var myIPAddress = '';
@@ -87,7 +90,7 @@ rclient.on('error',function() {
     error_handle("Error in Redis", 'redisConnection');
 });
 
-// Rescan Flag  (ie. #node qaeApi.js true)
+// Rescan Flag -  rescans all transaction (ie. #node qaeApiv2.js true)
 
 if (process.argv.length == 3) 
 {
@@ -103,8 +106,62 @@ if (process.argv.length == 3)
             await delAsync('qae_lastscanblock');
             await delAsync('qae_lastblockid');
             await delAsync('qae_ringsignatures');
-        
-        
+		
+			await setAsync('qae_lastscanblock', qaeactivationHeight);
+			await setAsync('qae_lastblockid', qaeactivationBlockId);
+			await hsetAsync('qae_ringsignatures', qaeactivationHeight, qaeactivationRingSig);
+
+            // Remove items from MongoDB
+			
+			let response = {};
+			let exists = true;
+                
+			var mclient = await qdb.connect();
+			qdb.setClient(mclient);
+                
+			exists = await qdb.doesCollectionExist('tokens');
+			console.log("Does collection 'tokens' Exist: " + exists);
+			if (exists == true)
+			{
+                console.log("Removing all documents from 'tokens'");
+                await qdb.removeDocuments('tokens', {});
+			}
+			else
+			{
+                console.log("Creating new collection 'tokens'");
+                await qdb.createCollection('tokens', {});
+			}
+
+			exists = await qdb.doesCollectionExist('addresses');
+			console.log("Does collection 'addresses' Exist: " + exists);
+			if (exists == true)
+			{
+                console.log("Removing all documents from 'addresses'");
+                await qdb.removeDocuments('addresses', {});
+			}
+			else
+			{
+                console.log("Creating new collection 'addresses'");
+                await qdb.createCollection('addresses', {});
+			}
+                
+			exists = await qdb.doesCollectionExist('transactions');
+			console.log("Does collection 'transactions' Exist: " + exists);
+			if (exists == true)
+			{
+                console.log("Removing all documents from 'transactions'");
+                await qdb.removeDocuments('transactions', {});
+			}
+			else
+			{
+                console.log("Creating new collection 'transactions'");
+                await qdb.createCollection('transactions', {});
+			}
+
+			await qae.indexDatabase(qdb);
+			
+            await qdb.close();			
+			
         })();
         
     }
@@ -143,9 +200,9 @@ router.route('/status')
             
             var pgclient = new Client({user: iniconfig.pg_username, database: iniconfig.pg_database, password: iniconfig.pg_password});
 
-	    await pgclient.connect()
-	    var dlblocks = await pgclient.query('SELECT * FROM blocks ORDER BY height DESC LIMIT 1')
-	    await pgclient.end()
+	    	await pgclient.connect()
+	    	var dlblocks = await pgclient.query('SELECT * FROM blocks ORDER BY height DESC LIMIT 1')
+	    	await pgclient.end()
             
             var scanned = await getAsync('qae_lastscanblock');
             
@@ -1099,7 +1156,7 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
                             
                         processedItems = false;
 
-                        if (parseInt(blocktranscount) > 0 && thisblockheight >= activationHeight)
+                        if (parseInt(blocktranscount) > 0 && thisblockheight >= qaeactivationHeight)
                         {
                 
 			    			try {
