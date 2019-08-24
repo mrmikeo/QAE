@@ -53,8 +53,9 @@ const qaeSchema = require("./lib/qaeSchema");
 const qae = new qaeSchema.default();
 
 const qaeactivationHeight = 2859480;
-const qaeactivationRingSig = 'cf7bd99a9f926f760e3481cde66dcb5f74d2f8403f0459b97537f989abbe9e1e';
 const qaeactivationBlockId = 'c36c7920a5194e67c646145c54051d22f9b2f192cf458da8683e34af4a1582ac';
+const qaeactivationRingSig = 'cf7bd99a9f926f760e3481cde66dcb5f74d2f8403f0459b97537f989abbe9e1e';
+const qaeactivationRingSigPrev = '7067bb587fcc4899ce5a0c1e748d60ef57e4579b18eb2742b78a908efc817b4a';
 
 // Declaring some variable defaults
 var myIPAddress = '';
@@ -111,7 +112,8 @@ rclient.get('qae_lastscanblock', function(err, lbreply)
 			await setAsync('qae_lastscanblock', qaeactivationHeight);
 			await setAsync('qae_lastblockid', qaeactivationBlockId);
 			await hsetAsync('qae_ringsignatures', qaeactivationHeight, qaeactivationRingSig);
-
+            await hsetAsync('qae_ringsignatures', qaeactivationHeight - 1, qaeactivationRingSigPrev);
+            
             // Remove items from MongoDB
 			
 			let response = {};
@@ -840,75 +842,6 @@ function initialize()
         {
             console.log(err);
         }
-        /*
-        else if (reply == null || parseInt(reply) != reply)
-        {
-        
-            // Invalid last block.   Start over.
-            (async () => {
-
-                let response = {};
-                let exists = true;
-                
-                var mclient = await qdb.connect();
-                qdb.setClient(mclient);
-                
-                exists = await qdb.doesCollectionExist('tokens');
-                console.log("Does collection 'tokens' Exist: " + exists);
-                if (exists == true)
-                {
-                    console.log("Removing all documents from 'tokens'");
-                    await qdb.removeDocuments('tokens', {});
-                }
-                else
-                {
-                    console.log("Creating new collection 'tokens'");
-                    await qdb.createCollection('tokens', {});
-                }
-
-                exists = await qdb.doesCollectionExist('addresses');
-                console.log("Does collection 'addresses' Exist: " + exists);
-                if (exists == true)
-                {
-                    console.log("Removing all documents from 'addresses'");
-                    await qdb.removeDocuments('addresses', {});
-                }
-                else
-                {
-                    console.log("Creating new collection 'addresses'");
-                    await qdb.createCollection('addresses', {});
-                }
-                
-                exists = await qdb.doesCollectionExist('transactions');
-                console.log("Does collection 'transactions' Exist: " + exists);
-                if (exists == true)
-                {
-                    console.log("Removing all documents from 'transactions'");
-                    await qdb.removeDocuments('transactions', {});
-                }
-                else
-                {
-                    console.log("Creating new collection 'transactions'");
-                    await qdb.createCollection('transactions', {});
-                }
-
-                await qdb.close();
-                
-                // START THE SERVER
-                // =============================================================================
-                app.listen(port);
-                console.log('Magic happens on Port:' + port);
-
-                myIPAddress = await publicIp.v4();
-                        
-                console.log("This IP Address is: " + myIPAddress);
-
-                scanBlocks(true);
-        
-            })();
-        
-        }
-        */
         else
         {
 
@@ -1325,7 +1258,7 @@ function processRingSignatures(thisblockheight, processedItems, pgclient, qdb)
 
         (async () => {
 
-            if (thisblockheight > 1)
+            if (thisblockheight > qaeactivationHeight)
             {
                             
                 rclient.hget('qae_ringsignatures', (parseInt(thisblockheight) - 1), function(err, reply)
