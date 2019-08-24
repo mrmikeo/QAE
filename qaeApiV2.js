@@ -1032,14 +1032,12 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
     asyncv3.whilst(
 		function test(cb) { cb(null, count < max) },
         function iter(callback) {
-			
-            (async () => {
-                
-                scanLockTimer = Math.floor(new Date() / 1000);
+			                
+            scanLockTimer = Math.floor(new Date() / 1000);
                                         
-                if (count%1000 == 0) console.log("Scanning: " + count);
+            if (count%1000 == 0) console.log("Scanning: " + count);
                 
-                var message = await pgclient.query('SELECT * FROM blocks WHERE height = $1 LIMIT 1', [count]);
+            pgclient.query('SELECT * FROM blocks WHERE height = $1 LIMIT 1', [count], (err, message) => {
                             
                 if (message && message.rows)
                 {
@@ -1080,104 +1078,102 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
                         if (parseInt(blocktranscount) > 0 && thisblockheight >= qaeactivationHeight)
                         {
                 
-			    			try {
-                                var tresponse = await pgclient.query('SELECT * FROM transactions WHERE block_id = $1 ORDER BY sequence ASC', [blockidcode]);
-			    			} catch (e) {
-								var tresponse = null;
-			    			}
+                            pgclient.query('SELECT * FROM transactions WHERE block_id = $1 ORDER BY sequence ASC', [blockidcode], (err, tresponse) => {
                 
-                            if (tresponse && tresponse.rows)
-                            {
+                            	if (tresponse && tresponse.rows)
+                            	{
                                 
-                                var trxcounter = 0;
+                            	    var trxcounter = 0;
                                                                 
-                                tresponse.rows.forEach( (origtxdata) => {
+                            	    tresponse.rows.forEach( (origtxdata) => {
                         
-                                    (async () => {
+                            	        (async () => {
                                     
-										var epochdate = new Date(Date.parse('2017-03-21 13:00:00'));
-										var unixepochtime = Math.round(epochdate.getTime()/1000);
+											var epochdate = new Date(Date.parse('2017-03-21 13:00:00'));
+											var unixepochtime = Math.round(epochdate.getTime()/1000);
 										
-										var unixtimestamp = parseInt(origtxdata.timestamp) + unixepochtime;
-										var humantimestamp = new Date(unixtimestamp * 1000).toISOString();
+											var unixtimestamp = parseInt(origtxdata.timestamp) + unixepochtime;
+											var humantimestamp = new Date(unixtimestamp * 1000).toISOString();
                                     
-                                    	var txdata = {};
-                                    	txdata.id = origtxdata.id
-                                    	txdata.blockId = origtxdata.block_id;
-                                    	txdata.version = origtxdata.version;
-                                    	txdata.type = origtxdata.type;
-                                    	txdata.amount = origtxdata.amount;
-                                    	txdata.fee = origtxdata.fee;
-                                    	txdata.sender = qreditjs.crypto.getAddress(origtxdata.sender_public_key);
-                                    	txdata.senderPublicKey = origtxdata.sender_public_key;
-                                    	txdata.recipient = origtxdata.recipient_id
-                                    	if (origtxdata.vendor_field_hex != null && origtxdata.vendor_field_hex != '')
-                                    	{
-                                    		txdata.vendorField = hex_to_ascii(origtxdata.vendor_field_hex.toString());
-                                    	}
-                                    	else
-                                    	{
-                                    		txdata.vendorField = null;
-                                    	}
-                                    	txdata.confirmations = parseInt(max) - parseInt(thisblockheight);
-                                    	txdata.timestamp = {epoch: origtxdata.timestamp, unix: unixtimestamp, human: humantimestamp};
+                            	        	var txdata = {};
+                            	        	txdata.id = origtxdata.id
+                            	        	txdata.blockId = origtxdata.block_id;
+                            	        	txdata.version = origtxdata.version;
+                            	        	txdata.type = origtxdata.type;
+                            	        	txdata.amount = origtxdata.amount;
+                            	        	txdata.fee = origtxdata.fee;
+                            	        	txdata.sender = qreditjs.crypto.getAddress(origtxdata.sender_public_key);
+                            	        	txdata.senderPublicKey = origtxdata.sender_public_key;
+                            	        	txdata.recipient = origtxdata.recipient_id
+                            	        	if (origtxdata.vendor_field_hex != null && origtxdata.vendor_field_hex != '')
+                            	        	{
+                            	        		txdata.vendorField = hex_to_ascii(origtxdata.vendor_field_hex.toString());
+                            	        	}
+                            	        	else
+                           		         	{
+                           	    	     		txdata.vendorField = null;
+                                	    	}
+                                    		txdata.confirmations = parseInt(max) - parseInt(thisblockheight);
+                                    		txdata.timestamp = {epoch: origtxdata.timestamp, unix: unixtimestamp, human: humantimestamp};
                                         
-                                        trxcounter++;
+                                        	trxcounter++;
                         
-                                        if (txdata.vendorField && txdata.vendorField != '')
-                                        {
+                                        	if (txdata.vendorField && txdata.vendorField != '')
+                                        	{
 
-                                            var isjson = false;
+                                        	    var isjson = false;
                             
-                                            try {
-                                                JSON.parse(txdata.vendorField);
-                                                isjson = true;
-                                            } catch (e) {
-                                                //console.log("VendorField is not JSON");
-                                            }
+                                        	    try {
+                                        	        JSON.parse(txdata.vendorField);
+                                        	        isjson = true;
+                                        	    } catch (e) {
+                                        	        //console.log("VendorField is not JSON");
+                                        	    }
                             
-                                            if (isjson === true)
-                                            {
+                                        	    if (isjson === true)
+                                        	    {
                                             
 console.log(txdata);
                                             
-                                                var parsejson = JSON.parse(txdata.vendorField);
+                                               		var parsejson = JSON.parse(txdata.vendorField);
                                             
-                                                if (parsejson.qae1)
-                                                {
-                                                    var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
+                                                	if (parsejson.qae1)
+                                                	{
+                                                	    var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
                                                         
-                                                    processedItems = true;
-                                                }
+                                                	    processedItems = true;
+                                                	}
                                 
-                                            }
+                                            	}
                             
-                                        }
+                                        	}
                                             
-                                        if (trxcounter == tresponse.rows.length)
-                                        {
+                                        	if (trxcounter == tresponse.rows.length)
+                                        	{
                                             
-                                            await processRingSignatures(thisblockheight, processedItems, pgclient, qdb);
+                                        	    await processRingSignatures(thisblockheight, processedItems, pgclient, qdb);
 
-                                            await setAsync('qae_lastscanblock', thisblockheight);
-                                            await setAsync('qae_lastblockid', blockidcode);
+                                        	    await setAsync('qae_lastscanblock', thisblockheight);
+                                        	    await setAsync('qae_lastblockid', blockidcode);
                                                 
-											count++;
-                                            callback(null, count);
+												count++;
+                                        	    callback(null, count);
                                             
-                                        }
+                                        	}
                             
-                                    })();
+                                    	})();
                             
-                                });
+                                	});
                     
-                            }
-			    			else
-			    			{
-                                // This needs to be handled.  TODO:  Missing transactions when there should be some
-								count++;
-								callback(null, count);
-			    			}
+                            	}
+			    				else
+			    				{
+                                	// This needs to be handled.  TODO:  Missing transactions when there should be some
+									count++;
+									callback(null, count);
+			    				}
+								
+							});
 				
                         }
                         else
@@ -1211,8 +1207,8 @@ console.log(txdata);
                 
                 }
 
-            })();
-
+			});
+			
         },
         function(err, n) {
         
