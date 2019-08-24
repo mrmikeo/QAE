@@ -843,7 +843,7 @@ function initialize()
                         
         console.log("This IP Address is: " + myIPAddress);
 
-        scanBlocks(false, false);
+        scanBlocks(false);
 		    
         // Create Webhooks
         if (iniconfig.webhooks_enabled == 1)
@@ -898,7 +898,7 @@ function initialize()
 // Main Functions
 // ==========================
 
-function scanBlocks(reindex = false) //, redownload = false)
+function scanBlocks(reindex = false)
 {
 
     if (reindex == true)
@@ -971,7 +971,7 @@ function doScan()
         }
         else if (reply == null || parseInt(reply) != reply)
         {
-            scanBlockId = 0;
+            scanBlockId = qaeactivationHeight;
         }
         else
         {
@@ -1283,10 +1283,8 @@ function processRingSignatures(thisblockheight, processedItems, pgclient, qdb)
             {
             
                 // First Block @ QAE Activation
-
-                fullhash = qaeactivationRingSig;
                 
-                await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
+                await hsetAsync('qae_ringsignatures', thisblockheight, qaeactivationRingSig);
                                 
                 resolve(true);
                                           
