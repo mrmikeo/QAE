@@ -90,13 +90,14 @@ rclient.on('error',function() {
     error_handle("Error in Redis", 'redisConnection');
 });
 
-// Rescan Flag -  rescans all transaction (ie. #node qaeApiv2.js true)
+// Rescan Flag or Unknown last scan -  rescans all transaction (ie. #node qaeApiv2.js true)
 
-if (process.argv.length == 3) 
+rclient.get('qae_lastscanblock', function(err, lbreply)
 {
 
-    if (process.argv[2] == '1' || process.argv[2] == 'true')
+    if ((process.argv.length == 3 && (process.argv[2] == '1' || process.argv[2] == 'true')) || lbreply == null || parseInt(reply) != lbreply) 
     {
+
         (async () => {
         
         	console.log("--------------------");
@@ -160,13 +161,28 @@ if (process.argv.length == 3)
 
 			await qae.indexDatabase(qdb);
 			
-            await qdb.close();			
+            await qdb.close();	
+            
+            // Initialze things
+            initialize();
 			
         })();
         
     }
+    else
+    {
+        // Initialze things
+        initialize(); 
+    }   
     
 }
+else
+{
+    // Initialze things
+    initialize(); 
+}
+    
+});
 
 // configure app to use bodyParser()
 // this will let us get the data from a POST
@@ -802,9 +818,6 @@ router.route('*')
 // all of our routes will be prefixed with /api
 app.use('/api', router);
 
-// Initialze things
-initialize();
-
 // Failsafe
 var interval = setInterval(function() {
 
@@ -834,6 +847,7 @@ function initialize()
         {
             console.log(err);
         }
+        /*
         else if (reply == null || parseInt(reply) != reply)
         {
         
@@ -901,6 +915,7 @@ function initialize()
             })();
         
         }
+        */
         else
         {
 
