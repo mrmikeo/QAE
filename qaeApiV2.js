@@ -1031,15 +1031,13 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 {
 
     asyncv3.whilst(
-		function test(cb) { count++; cb(null, count < max;) },
+		function test(cb) { cb(null, count < max) },
         function iter(callback) {
 
-console.log(count);
+			count++;
 			
             (async () => {
-    
-                //count++;
-            
+                
                 scanLockTimer = Math.floor(new Date() / 1000);
                                         
                 if (count%1000 == 0) console.log("Scanning: " + count);
