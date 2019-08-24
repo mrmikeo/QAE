@@ -1029,7 +1029,7 @@ function doScan()
 
 async function whilstScanBlocks(count, max, pgclient, qdb)
 {
-    asyncv3.doWhilst(
+    asyncv3.whilst(
 		function test(cb) { cb(null, count < max) },
         function iter(callback) {
 			
