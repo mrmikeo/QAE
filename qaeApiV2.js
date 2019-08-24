@@ -1241,7 +1241,7 @@ function processRingSignatures(thisblockheight, processedItems, pgclient, qdb)
 
         (async () => {
 
-            if (thisblockheight > qaeactivationHeight)
+            if (parseInt(thisblockheight) > parseInt(qaeactivationHeight))
             {
                             
                 rclient.hget('qae_ringsignatures', (parseInt(thisblockheight) - 1), function(err, reply)
@@ -1293,6 +1293,8 @@ function processRingSignatures(thisblockheight, processedItems, pgclient, qdb)
             
                 fullhash = qaeactivationRingSig; //crypto.createHash('sha256').update(sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
 
+console.log("activation hash @ " + thisblockheight + ": " + fullhash);
+                
                 await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
                                 
                 resolve(true);
