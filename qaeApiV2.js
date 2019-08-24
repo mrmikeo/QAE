@@ -1050,8 +1050,8 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 {
 
     asyncv3.whilst(
-        function () { return count < max },
-        function (callback) {
+        function test(cb) { cb(null, count < max) },
+        function iter(callback) {
     
             (async () => {
     
@@ -1184,7 +1184,7 @@ console.log(txdata);
                                             await setAsync('qae_lastscanblock', thisblockheight);
                                             await setAsync('qae_lastblockid', blockidcode);
                                                 
-                                            callback(null, null);
+                                            callback(null, count);
                                             
                                         }
                             
@@ -1196,212 +1196,8 @@ console.log(txdata);
 			    			else
 			    			{
                                 // This needs to be handled.  TODO:  Missing transactions when there should be some
-								callback(null, null);
+								callback(null, count);
 			    			}
-				
-                        }
-                        else
-                        {
-                            
-                            await processRingSignatures(thisblockheight, false, pgclient, qdb);
-
-                            await setAsync('qae_lastscanblock', thisblockheight);
-                            await setAsync('qae_lastblockid', blockidcode);
-
-                            callback(null, null);
-                                
-                        }
-
-                    }
-
-                }
-                else
-                {
-                
-                    console.log("Block #" + count + " not found in database.. This is a fatal error...");
-                    process.exit(-1);
-                
-                }
-
-
-            })();
-
-        },
-        function (err, n) {
-        
-            (async () => {
-            
-                await qdb.close();
-                await pgclient.end()
-                
-                scanLock = false;
-                scanLockTimer = 0;
-                
-                var nowTime = Math.floor(new Date() / 1000);
-                
-                if (gotSeedPeers < nowTime - 900) // Check for seeds every 15 minutes
-                {
-                    gotSeedPeers = nowTime;
-                    getSeedPeers();
-                }
-        
-            })();
-            
-        }
-        
-    );
-	
-	
-	
-/*
-    asyncv3.whilst(
-        function test(cb) { cb(null, count < max) },
-        function iter(callback) {
-    
-            (async () => {
-    
-                count++;
-            
-                scanLockTimer = Math.floor(new Date() / 1000);
-                                        
-                if (count%1000 == 0) console.log("Scanning: " + count);
-                
-                var message = await pgclient.query('SELECT * FROM blocks WHERE height = $1 LIMIT 1', [count]);
-                            
-                if (message && message.rows)
-                {
-
-                    var blockdata = message.rows[0];
-
-                    if (blockdata && blockdata.id)
-                    {
-
-                        var blockidcode = blockdata.id;
-                        var blocktranscount = blockdata.number_of_transactions;
-                        var thisblockheight = blockdata.height;
-                    
-                        var previousblockid = blockdata.previous_block;
-
-                        if (lastBlockId != previousblockid && thisblockheight > 1)
-                        {
-                    
-                            console.log('Error:  Last Block ID is incorrect!  Rescan Required!');
-                            
-                            console.log("Expected: " + previousblockid);
-                            console.log("Received: " + lastBlockId);
-                            console.log("ThisBlockHeight: " + thisblockheight);
-                            console.log("LastScanBlock: " + count);
-                            
-                            rclient.del('qae_lastblockid', function(err, reply){
-                                rclient.del('qae_lastscanblock', function(err, reply){
-                                    process.exit(-1);
-                                });
-                            });
-                    
-                        }
-
-                        lastBlockId = blockidcode;
-                            
-                        processedItems = false;
-
-                        if (parseInt(blocktranscount) > 0 && thisblockheight >= activationHeight)
-                        {
-                
-			    try {
-                                var tresponse = await pgclient.query('SELECT * FROM transactions WHERE block_id = $1 ORDER BY sequence ASC', [blockidcode]);
-			    } catch (e) {
-				var tresponse = null;
-			    }
-                
-                            if (tresponse && tresponse.rows)
-                            {
-                                
-                                var trxcounter = 0;
-                                                                
-                                tresponse.rows.forEach( (origtxdata) => {
-                        
-                                    (async () => {
-                                    
-					var epochdate = new Date(Date.parse('2017-03-21 13:00:00'));
-					var unixepochtime = Math.round(epochdate.getTime()/1000);
-										
-					var unixtimestamp = parseInt(origtxdata.timestamp) + unixepochtime;
-					var humantimestamp = new Date(unixtimestamp * 1000).toISOString();
-                                    
-                                    	var txdata = {};
-                                    	txdata.id = origtxdata.id
-                                    	txdata.blockId = origtxdata.block_id;
-                                    	txdata.version = origtxdata.version;
-                                    	txdata.type = origtxdata.type;
-                                    	txdata.amount = origtxdata.amount;
-                                    	txdata.fee = origtxdata.fee;
-                                    	txdata.sender = qreditjs.crypto.getAddress(origtxdata.sender_public_key);
-                                    	txdata.senderPublicKey = origtxdata.sender_public_key;
-                                    	txdata.recipient = origtxdata.recipient_id
-                                    	if (origtxdata.vendor_field_hex != null && origtxdata.vendor_field_hex != '')
-                                    	{
-                                    		txdata.vendorField = hex_to_ascii(origtxdata.vendor_field_hex.toString());
-                                    	}
-                                    	else
-                                    	{
-                                    		txdata.vendorField = null;
-                                    	}
-                                    	txdata.confirmations = parseInt(max) - parseInt(thisblockheight);
-                                    	txdata.timestamp = {epoch: origtxdata.timestamp, unix: unixtimestamp, human: humantimestamp};
-                                        
-                                        trxcounter++;
-                        
-                                        if (txdata.vendorField && txdata.vendorField != '')
-                                        {
-
-                                            var isjson = false;
-                            
-                                            try {
-                                                JSON.parse(txdata.vendorField);
-                                                isjson = true;
-                                            } catch (e) {
-                                                //console.log("VendorField is not JSON");
-                                            }
-                            
-                                            if (isjson === true)
-                                            {
-                                            
-console.log(txdata);
-                                            
-                                                var parsejson = JSON.parse(txdata.vendorField);
-                                            
-                                                if (parsejson.qae1)
-                                                {
-                                                    var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
-                                                        
-                                                    processedItems = true;
-                                                }
-                                
-                                            }
-                            
-                                        }
-                                            
-                                        if (trxcounter == tresponse.rows.length)
-                                        {
-                                            
-                                            await processRingSignatures(thisblockheight, processedItems, pgclient, qdb);
-
-                                            await setAsync('qae_lastscanblock', thisblockheight);
-                                            await setAsync('qae_lastblockid', blockidcode);
-                                                
-                                            callback(null, count);
-                                            
-                                        }
-                            
-                                    })();
-                            
-                                });
-                    
-                            }
-			    else
-			    {
-                                // This needs to be handled.  TODO:  Missing transactions when there should be some
-			    }
 				
                         }
                         else
@@ -1427,7 +1223,6 @@ console.log(txdata);
                 
                 }
 
-
             })();
 
         },
@@ -1454,8 +1249,6 @@ console.log(txdata);
         }
         
     );
-
-*/
 
 
 }
