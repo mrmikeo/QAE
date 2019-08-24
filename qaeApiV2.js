@@ -1015,7 +1015,7 @@ function doScan()
                 var mclient = await qdb.connect();
                 qdb.setClient(mclient);
                 
-                await whilstScanBlocks(scanBlockId, currentHeight, pgclient, qdb);
+                await whilstScanBlocks(scanBlockId + 1, currentHeight, pgclient, qdb);
                 
                                     
             })();
