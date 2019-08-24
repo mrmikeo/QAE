@@ -55,7 +55,6 @@ const qae = new qaeSchema.default();
 const qaeactivationHeight = 2859480;
 const qaeactivationBlockId = 'c36c7920a5194e67c646145c54051d22f9b2f192cf458da8683e34af4a1582ac';
 const qaeactivationRingSig = 'cf7bd99a9f926f760e3481cde66dcb5f74d2f8403f0459b97537f989abbe9e1e';
-const qaeactivationRingSigPrev = '7067bb587fcc4899ce5a0c1e748d60ef57e4579b18eb2742b78a908efc817b4a';
 
 // Declaring some variable defaults
 var myIPAddress = '';
@@ -112,7 +111,6 @@ rclient.get('qae_lastscanblock', function(err, lbreply)
 			await setAsync('qae_lastscanblock', qaeactivationHeight);
 			await setAsync('qae_lastblockid', qaeactivationBlockId);
 			await hsetAsync('qae_ringsignatures', qaeactivationHeight, qaeactivationRingSig);
-            await hsetAsync('qae_ringsignatures', qaeactivationHeight - 1, qaeactivationRingSigPrev);
             
             // Remove items from MongoDB
 			
@@ -834,81 +832,66 @@ var intervalpeers = setInterval(function() {
 function initialize()
 {
 
-    // Check Database
-    rclient.get('qae_lastscanblock', function(err, reply)
-    {
-    
-        if (err)
-        {
-            console.log(err);
-        }
-        else
-        {
+    (async () => {
 
-            (async () => {
+        // START THE SERVER
+        // =============================================================================
+        app.listen(port);
+        console.log('Magic happens on Port:' + port);
 
-                // START THE SERVER
-                // =============================================================================
-                app.listen(port);
-                console.log('Magic happens on Port:' + port);
-
-                myIPAddress = await publicIp.v4();
+        myIPAddress = await publicIp.v4();
                         
-                console.log("This IP Address is: " + myIPAddress);
+        console.log("This IP Address is: " + myIPAddress);
 
-                scanBlocks(false, false);
+        scanBlocks(false, false);
 		    
-				// Create Webhooks
-				if (iniconfig.webhooks_enabled == 1)
-				{
+        // Create Webhooks
+        if (iniconfig.webhooks_enabled == 1)
+        {
 			
-	            	console.log("Creating Webhook");
+	        console.log("Creating Webhook");
 			
-                    request.get(iniconfig.webhook_node + '/webhooks', {json:true}, function (error, response, body)
-                    {
+	        request.get(iniconfig.webhook_node + '/webhooks', {json:true}, function (error, response, body)
+	        {
 
-		        		if (body && body.data)
-		        		{
+		        if (body && body.data)
+		        {
 			    
-		    	    		var currentWebhooks = body.data;
+		    	    var currentWebhooks = body.data;
 			    
-			    			currentWebhooks.forEach( (row) => { 
+			    	currentWebhooks.forEach( (row) => { 
 				
-			        			if (row.target == iniconfig.qae_webhook)
-			        			{
-		                    		var hookId = row.id;
-				    				console.log("Delete Webhook #" + hookId);
-                                    request.delete(iniconfig.webhook_node + '/webhooks/' + hookId, {json:true}, function (error, response, body){});    
-			        			}
+			        	if (row.target == iniconfig.qae_webhook)
+			        	{
+		                    var hookId = row.id;
+				    		console.log("Delete Webhook #" + hookId);
+                            request.delete(iniconfig.webhook_node + '/webhooks/' + hookId, {json:true}, function (error, response, body){});    
+			        	}
 			    
-			    			});
+			    	});
 			    
-		        		}
+		        }
                     
-		        		// Create New Hook
-		        		var postVars = {};
-		        		postVars.event = 'block.applied';
-		        		postVars.target = iniconfig.qae_webhook;
-	            		postVars.conditions = [{key:'height', condition: 'gt', value: 0}];
+		        // Create New Hook
+		        var postVars = {};
+		        postVars.event = 'block.applied';
+		        postVars.target = iniconfig.qae_webhook;
+	            postVars.conditions = [{key:'height', condition: 'gt', value: 0}];
 			
-		        		request.post(iniconfig.webhook_node + '/webhooks', {json:true, body: postVars, header: {Authorization: webhookToken}}, function (error, response, body){
+		        request.post(iniconfig.webhook_node + '/webhooks', {json:true, body: postVars, header: {Authorization: webhookToken}}, function (error, response, body){
 		    
-			    			console.log(body);
+			    	console.log(body);
 				
-			    			webhookToken = body.data.token;
-			    			webhookVerification = webhookToken.substring(32);
+			    	webhookToken = body.data.token;
+			    	webhookVerification = webhookToken.substring(32);
 		    
-		        		});
+		        });
                                                         
-                	});
+	        });
 			
-				}
-        
-            })();
-            
         }
-
-    });
+        
+    })();        
 
 }
 
@@ -1301,14 +1284,14 @@ function processRingSignatures(thisblockheight, processedItems, pgclient, qdb)
             
                 // First Block
                 
-				var message = await pgclient.query('SELECT * FROM blocks WHERE height = $1 LIMIT 1', [thisblockheight]);
+				//var message = await pgclient.query('SELECT * FROM blocks WHERE height = $1 LIMIT 1', [thisblockheight]);
 
-                sigblockhash =  message.rows[0].id;
-                sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
-                sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
-                sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
+                //sigblockhash =  message.rows[0].id;
+                //sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
+                //sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
+                //sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
             
-                fullhash = crypto.createHash('sha256').update(sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
+                fullhash = qaeactivationRingSig; //crypto.createHash('sha256').update(sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
 
                 await hsetAsync('qae_ringsignatures', thisblockheight, fullhash);
                                 
