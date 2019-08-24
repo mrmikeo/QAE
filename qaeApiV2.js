@@ -1184,7 +1184,7 @@ console.log(txdata);
                                             await setAsync('qae_lastscanblock', thisblockheight);
                                             await setAsync('qae_lastblockid', blockidcode);
                                                 
-                                            callback();
+                                            callback(null, null);
                                             
                                         }
                             
@@ -1196,7 +1196,7 @@ console.log(txdata);
 			    			else
 			    			{
                                 // This needs to be handled.  TODO:  Missing transactions when there should be some
-								callback();
+								callback(null, null);
 			    			}
 				
                         }
@@ -1208,7 +1208,7 @@ console.log(txdata);
                             await setAsync('qae_lastscanblock', thisblockheight);
                             await setAsync('qae_lastblockid', blockidcode);
 
-                            callback();
+                            callback(null, null);
                                 
                         }
 
@@ -1227,7 +1227,7 @@ console.log(txdata);
             })();
 
         },
-        function (err) {
+        function (err, n) {
         
             (async () => {
             
