@@ -1031,7 +1031,8 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 {
 
     asyncv3.whilst(
-        function test(cb) { cb(null, count < max) },
+        //function test(cb) { cb(null, count < max) },
+        function () { return count < max; },
         function iter(callback) {
     
             (async () => {
@@ -1193,6 +1194,13 @@ console.log(txdata);
                                 
                         }
 
+                    }
+                    else
+                    {
+
+                        console.log("Block #" + count + " missing blockdata info.. This is a fatal error...");
+                        process.exit(-1);
+                        
                     }
 
                 }
