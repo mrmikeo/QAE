@@ -1031,7 +1031,7 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 {
     asyncv3.doWhilst(
 
-        function iter(callback) {
+        function iter(cb) {
 
 			count++;
 			
@@ -1164,7 +1164,7 @@ console.log(txdata);
                                             await setAsync('qae_lastscanblock', thisblockheight);
                                             await setAsync('qae_lastblockid', blockidcode);
                                                 
-                                            callback(null, count);
+                                            cb(null, count);
                                             
                                         }
                             
@@ -1176,7 +1176,7 @@ console.log(txdata);
 			    			else
 			    			{
                                 // This needs to be handled.  TODO:  Missing transactions when there should be some
-								callback(null, count);
+								cb(null, count);
 			    			}
 				
                         }
@@ -1188,7 +1188,7 @@ console.log(txdata);
                             await setAsync('qae_lastscanblock', thisblockheight);
                             await setAsync('qae_lastblockid', blockidcode);
 
-                            callback(null, count);
+                            cb(null, count);
                                 
                         }
 
@@ -1213,7 +1213,7 @@ console.log(txdata);
             })();
 
         },
-		function test(cb) { cb(null, count < max) },
+		function() { return count < max; },
         function(err, n) {
         
             (async () => {
@@ -1231,6 +1231,8 @@ console.log(txdata);
                     gotSeedPeers = nowTime;
                     getSeedPeers();
                 }
+				
+				callback(null, null);
         
             })();
             
