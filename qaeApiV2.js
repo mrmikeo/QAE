@@ -95,7 +95,7 @@ rclient.on('error',function() {
 rclient.get('qae_lastscanblock', function(err, lbreply)
 {
 
-    if ((process.argv.length == 3 && (process.argv[2] == '1' || process.argv[2] == 'true')) || lbreply == null || parseInt(reply) != lbreply) 
+    if ((process.argv.length == 3 && (process.argv[2] == '1' || process.argv[2] == 'true')) || lbreply == null || parseInt(lbreply) != lbreply) 
     {
 
         (async () => {
@@ -174,13 +174,6 @@ rclient.get('qae_lastscanblock', function(err, lbreply)
         // Initialze things
         initialize(); 
     }   
-    
-}
-else
-{
-    // Initialze things
-    initialize(); 
-}
     
 });
 
