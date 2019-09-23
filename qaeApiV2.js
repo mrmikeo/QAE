@@ -38,7 +38,7 @@ const mongodatabase = iniconfig.mongo_database;
 // MongoDB Library
 const qaeDB = require("./lib/qaeDB");
 const qdb = new qaeDB.default(mongoconnecturl, mongodatabase); /* For internal processing */
-const qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase); /* For the API */
+//const qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase); /* For the API */
 
 // Connect to Redis and setup some async call definitions
 const rclient   = redis.createClient(iniconfig.redis_port, iniconfig.redis_host,{detect_buffers: true});
@@ -264,13 +264,15 @@ router.route('/tokens')
 
         (async () => {
         
+	    var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
             var mclient = await qdbapi.connect();
             qdbapi.setClient(mclient);
             message = await qdbapi.findDocuments('tokens', {}, limit, sort, skip);
-
-            await qdbapi.close();
-            
-            res.json(message);
+		
+            qdbapi.close();
+		
+	    res.json(message);
         
         })();
         
@@ -287,11 +289,13 @@ router.route('/token/:id')
 
         (async () => {
         
+	    var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
             var mclient = await qdbapi.connect();
             qdbapi.setClient(mclient);
             message = await qdbapi.findDocuments('tokens', {'tokenDetails.tokenIdHex': tokenid});
 
-            await qdbapi.close();
+            qdbapi.close();
             
             res.json(message);
         
@@ -326,11 +330,13 @@ router.route('/addresses')
 
         (async () => {
         
+            var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
             var mclient = await qdbapi.connect();
             qdbapi.setClient(mclient);
             message = await qdbapi.findDocuments('addresses', {}, limit, sort, skip);
 
-            await qdbapi.close();
+            qdbapi.close();
             
             res.json(message);
         
@@ -349,11 +355,13 @@ router.route('/address/:addr')
 
         (async () => {
         
+	    var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
             var mclient = await qdbapi.connect();
             qdbapi.setClient(mclient);
             message = await qdbapi.findDocuments('addresses', {"address": addr});
 
-            await qdbapi.close();
+            qdbapi.close();
             
             res.json(message);
         
@@ -390,11 +398,13 @@ router.route('/addressesByTokenId/:tokenid')
 
         (async () => {
         
+	    var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
             var mclient = await qdbapi.connect();
             qdbapi.setClient(mclient);
             message = await qdbapi.findDocuments('addresses', {"tokenIdHex": tokenid}, limit, sort, skip);
 
-            await qdbapi.close();
+            qdbapi.close();
             
             res.json(message);
         
@@ -414,6 +424,8 @@ router.route('/balance/:tokenid/:address')
 
         (async () => {
         
+	    var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
             var mclient = await qdbapi.connect();
             qdbapi.setClient(mclient);
 
@@ -422,7 +434,7 @@ router.route('/balance/:tokenid/:address')
             
             message = await qdbapi.findDocument('addresses', {"recordId": recordId});
 
-            await qdbapi.close();
+            qdbapi.close();
             
             if (message && message.tokenBalance)
             {
@@ -469,11 +481,13 @@ router.route('/transactions')
 
         (async () => {
         
+	    var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
             var mclient = await qdbapi.connect();
             qdbapi.setClient(mclient);
             message = await qdbapi.findDocuments('transactions', {}, limit, sort, skip);
 
-            await qdbapi.close();
+            qdbapi.close();
             
             res.json(message);
         
@@ -492,11 +506,13 @@ router.route('/transaction/:txid')
 
         (async () => {
         
+	    var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
             var mclient = await qdbapi.connect();
             qdbapi.setClient(mclient);
             message = await qdbapi.findDocuments('transactions', {"txid": txid});
 
-            await qdbapi.close();
+            qdbapi.close();
             
             res.json(message);
         
@@ -533,6 +549,8 @@ router.route('/transactions/:tokenid')
 
         (async () => {
         
+	    var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
             var mclient = await qdbapi.connect();
             qdbapi.setClient(mclient);
             
@@ -540,7 +558,7 @@ router.route('/transactions/:tokenid')
             
             message = await qdbapi.findDocuments('transactions', mquery, limit, sort, skip);
 
-            await qdbapi.close();
+            qdbapi.close();
             
             res.json(message);
         
@@ -578,6 +596,8 @@ router.route('/transactions/:tokenid/:address')
 
         (async () => {
         
+            var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
             var mclient = await qdbapi.connect();
             qdbapi.setClient(mclient);
             
@@ -599,7 +619,7 @@ router.route('/transactions/:tokenid/:address')
             
             message = await qdbapi.findDocuments('transactions', mquery, limit, sort, skip);
 
-            await qdbapi.close();
+            qdbapi.close();
             
             res.json(message);
         
@@ -637,11 +657,13 @@ router.route('/tokensByOwner/:owner')
 
         (async () => {
         
+	    var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
             var mclient = await qdbapi.connect();
             qdbapi.setClient(mclient);
             message = await qdbapi.findDocuments('tokens', {"tokenDetails.ownerAddress": ownerId}, limit, sort, skip);
 
-            await qdbapi.close();
+            qdbapi.close();
             
             res.json(message);
         
