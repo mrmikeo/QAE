@@ -1163,14 +1163,32 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
                         	                        {
                                             
 console.log(txdata);
+
+
+
+								
+								
+								
                                             
                         	                            var parsejson = JSON.parse(txdata.vendorField);
                                             
                         	                            if (parsejson.qae1)
                         	                            {
-                        	                                var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
-                                                        
-                            	                            processedItems = true;
+								    
+            							var txmessage = await qdb.findDocuments('transactions', {"txid": txdata.id});
+            							if (txmessage.length == 0)
+								{
+                        	                                	var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
+								
+                            	                            		processedItems = true;
+								}
+								else
+								{
+									console.log('ERROR:  We already have TXID: ' + txdata.id);
+								}
+								    
+							    }
+								
                             	                        }
                                 
                             	                    }
