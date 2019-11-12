@@ -1162,13 +1162,7 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
                         	                        if (isjson === true)
                         	                        {
                                             
-console.log(txdata);
-
-
-
-								
-								
-								
+console.log(txdata);	
                                             
                         	                            var parsejson = JSON.parse(txdata.vendorField);
                                             
@@ -1193,7 +1187,7 @@ console.log(txdata);
                                 
                             	                    }
                             
-                            	                }
+                            	                
                                             
                             	                //if (trxcounter == tresponse.rows.length)
                             	                //{
