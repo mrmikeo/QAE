@@ -1172,8 +1172,11 @@ console.log(txdata);
             							var txmessage = await qdb.findDocuments('transactions', {"txid": txdata.id});
             							if (txmessage.length == 0)
 								{
-                        	                                	var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
-								
+									try {
+                        	                                	    var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
+									} catch (e) {
+									    error_handle(e, 'parseTransaction', 'error');
+									}
                             	                            		processedItems = true;
 								}
 								else
