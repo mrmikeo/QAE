@@ -397,18 +397,14 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 				
 										if (tresponse && tresponse.rows)
 										{
-								
-											var trxcounter = 0;
-										
+																		
 											(async () => {
 										
 												for (let ti = 0; ti < tresponse.rows.length; ti++)
 												{
 										
-													let origtxdata = tresponse.rows[ti];
-										
-												//(async () => {
-										
+													var origtxdata = tresponse.rows[ti];
+																				
 													var epochdate = new Date(Date.parse('2017-03-21 13:00:00'));
 													var unixepochtime = Math.round(epochdate.getTime()/1000);
 											
@@ -435,9 +431,7 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 													}
 													txdata.confirmations = parseInt(max) - parseInt(thisblockheight);
 													txdata.timestamp = {epoch: origtxdata.timestamp, unix: unixtimestamp, human: humantimestamp};
-										
-													trxcounter++;
-						
+																
 													if (txdata.vendorField && txdata.vendorField != '')
 													{
 
@@ -453,7 +447,7 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 														if (isjson === true)
 														{
 											
-	console.log(txdata);	
+console.log(txdata);	
 											
 															var parsejson = JSON.parse(txdata.vendorField);
 											
@@ -484,10 +478,6 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 												
 										
 												}
-											
-											})();
-																
-											(async () => {
 											
 												await processRingSignatures(thisblockheight, processedItems, pgclient, qdb);
 
@@ -560,14 +550,6 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 				
 					scanLock = false;
 					scanLockTimer = 0;
-				
-					var nowTime = Math.floor(new Date() / 1000);
-				
-					if (gotSeedPeers < nowTime - 900) // Check for seeds every 15 minutes
-					{
-						gotSeedPeers = nowTime;
-						getSeedPeers();
-					}
 				
 					resolve(true);
 		

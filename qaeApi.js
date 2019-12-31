@@ -737,6 +737,18 @@ var intervalpeers = setInterval(function() {
   
 }, 60000);
 
+var intervalseeds = setInterval(function() {
+
+	var nowTime = Math.floor(new Date() / 1000);
+
+	if (gotSeedPeers < nowTime - 900) // Check for seeds every 15 minutes
+	{
+		gotSeedPeers = nowTime;
+		getSeedPeers();
+	}
+	
+}, 900000);
+
 function initialize()
 {
 
@@ -796,6 +808,8 @@ function initialize()
 			});
 			
 		}
+		
+		getSeedPeers();
 		
 	})();		 
 
