@@ -18,6 +18,7 @@ const ini		  = require('ini');				 // so we can parse the ini files properties
 const Big		  = require('big.js');			 // required unless you want floating point math issues
 const nodemailer  = require('nodemailer');		 // for sending error reports about this node
 const crypto	  = require('crypto');			 // for creating hashes of things
+const SparkMD5	  = require('spark-md5');  		 // Faster than crypto for md5
 const request	  = require('request');			 // Library for making http requests
 const publicIp	  = require('public-ip');		 // a helper to find out what our external IP is.	Needed for generating proper ring signatures
 const {promisify} = require('util');			 // Promise functions
@@ -430,7 +431,8 @@ router.route('/balance/:tokenid/:address')
 			qdbapi.setClient(mclient);
 
 			var rawRecordId = addr + '.' + tokenid;
-			var recordId = crypto.createHash('md5').update(rawRecordId).digest('hex');
+			//var recordId = crypto.createHash('md5').update(rawRecordId).digest('hex');
+			var recordId = SparkMD5.hash(rawRecordId);
 			
 			message = await qdbapi.findDocument('addresses', {"recordId": recordId});
 
@@ -1064,7 +1066,7 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 										
 				if (count%1000 == 0 || count == max) console.log("Scanning: " + count);
 				
-				pgclient.query('SELECT * FROM blocks WHERE height = $1 LIMIT 1', [count], (err, message) => {
+				pgclient.query('SELECT id, number_of_transactions, height, previous_block FROM blocks WHERE height = $1 LIMIT 1', [count], (err, message) => {
 							
 					if (message && message.rows)
 					{
@@ -1189,24 +1191,6 @@ console.log(txdata);
 													}
 							
 												}
-							
-												
-											
-												//if (trxcounter == tresponse.rows.length)
-												//{
-											
-												//	  await processRingSignatures(thisblockheight, processedItems, pgclient, qdb);
-
-												//	  await setAsync('qae_lastscanblock', thisblockheight);
-												//	  await setAsync('qae_lastblockid', blockidcode);
-												
-												//	  try {
-												//		callback(null, count);
-												//	  } catch (e) {
-												//		console.log(e);
-												//	  }
-											
-												//}
 												
 												callbackeach();
 							
