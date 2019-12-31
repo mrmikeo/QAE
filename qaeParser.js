@@ -1,6 +1,6 @@
 /*
 *
-* QAE - Version 0.0.1
+* QAE - Version 1.0.1
 *
 * Qredit Always Evolving
 *

@@ -1,4 +1,4 @@
-# QAE  -- Version 0.2
+# QAE  -- Version 1.0.1
 Qredit Always Evolving Tokens
 
 An API extension for the Qredit network to integrate Simple Token issuance and management
@@ -50,11 +50,13 @@ SEND - Send tokens from sender address to recipient address
 PAUSE - Pause the contract.  Prevents any calls other than RESUME
 RESUME - Resume the contract.
 NEWOWNER - Change the owner of the contract.
+FREEZE - Freeze balance for Token @ Address.
+UNFREEZE - UnFreeze balance for Token @ Address.
 ```
 
 JSON Variables:
 
-GENESIS:
+GENESIS:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
 
 ```
 de = Decimal Places  (Integer: 0-8)
@@ -67,7 +69,7 @@ pa = Pausable (Boolean:  Default false)  (Optional)
 mi = Mintable (Boolean:  Default false)  (Optional)
 ```
 
-BURN:
+BURN:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
 
 ```
 id = tokenIdHex (Hexidecimal)
@@ -75,7 +77,7 @@ qt = Quantity (Integer)
 no = Notes  (String: Max 32 Characters)  (Optional)
 ```
 
-MINT:
+MINT:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
 
 ```
 id = tokenIdHex (Hexidecimal)
@@ -83,7 +85,7 @@ qt = Quantity (Integer)
 no = Notes  (String: Max 32 Characters)  (Optional)
 ```
 
-SEND:
+SEND:  (Recipent Address is whom you are sending Tokens to)
 
 ```
 id = tokenIdHex (Hexidecimal)
@@ -91,21 +93,35 @@ qt = Quantity (Integer)
 no = Notes  (String: Max 32 Characters)  (Optional)
 ```
 
-PAUSE:
+PAUSE:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
 
 ```
 id = tokenIdHex (Hexidecimal)
 no = Notes  (String: Max 32 Characters)  (Optional)
 ```
 
-UNPAUSE:
+UNPAUSE:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
 
 ```
 id = tokenIdHex (Hexidecimal)
 no = Notes  (String: Max 32 Characters)  (Optional)
 ```
 
-NEWOWNER:
+NEWOWNER:  (Recipent Address is whom you are reassigning contract to)
+
+```
+id = tokenIdHex (Hexidecimal)
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
+
+FREEZE:  (Recipent Address is whom you want to freeze)
+
+```
+id = tokenIdHex (Hexidecimal)
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
+
+UNFREEZE:  (Recipent Address is whom you want to unfreeze)
 
 ```
 id = tokenIdHex (Hexidecimal)
