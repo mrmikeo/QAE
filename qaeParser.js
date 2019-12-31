@@ -206,7 +206,9 @@ function blockNotifyQueue()
 	rclienttwo.blpop('blockNotify', iniconfig.polling_interval, function(err, data)
 	{
 
-		if (data == 1)
+console.log('bn:' + data);
+
+		if (data == 'new')
 		{
 			newblocknotify();
 		}

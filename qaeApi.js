@@ -822,7 +822,9 @@ function initialize()
 function newblocknotify()
 {
 
-	rclient.rpush('blockNotify', 1);
+	console.log('New Block Notify Received..');
+	
+	rclient.rpush('blockNotify', 'new');
 	
 	return true;
 
