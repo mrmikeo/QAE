@@ -481,116 +481,8 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 																			
 												})();
 										
-										
-										
-										
-										
 											}
 																
-											//tresponse.rows.forEach( (origtxdata) => {
-
-	/*
-											asyncv3.each(tresponse.rows, function(origtxdata, callbackeach) {
-						
-												(async () => {
-										
-													var epochdate = new Date(Date.parse('2017-03-21 13:00:00'));
-													var unixepochtime = Math.round(epochdate.getTime()/1000);
-											
-													var unixtimestamp = parseInt(origtxdata.timestamp) + unixepochtime;
-													var humantimestamp = new Date(unixtimestamp * 1000).toISOString();
-									
-													var txdata = {};
-													txdata.id = origtxdata.id
-													txdata.blockId = origtxdata.block_id;
-													txdata.version = origtxdata.version;
-													txdata.type = origtxdata.type;
-													txdata.amount = origtxdata.amount;
-													txdata.fee = origtxdata.fee;
-													txdata.sender = qreditjs.crypto.getAddress(origtxdata.sender_public_key);
-													txdata.senderPublicKey = origtxdata.sender_public_key;
-													txdata.recipient = origtxdata.recipient_id
-													if (origtxdata.vendor_field_hex != null && origtxdata.vendor_field_hex != '')
-													{
-														txdata.vendorField = hex_to_ascii(origtxdata.vendor_field_hex.toString());
-													}
-													else
-													{
-														txdata.vendorField = null;
-													}
-													txdata.confirmations = parseInt(max) - parseInt(thisblockheight);
-													txdata.timestamp = {epoch: origtxdata.timestamp, unix: unixtimestamp, human: humantimestamp};
-										
-													trxcounter++;
-						
-													if (txdata.vendorField && txdata.vendorField != '')
-													{
-
-														var isjson = false;
-							
-														try {
-															JSON.parse(txdata.vendorField);
-															isjson = true;
-														} catch (e) {
-															//console.log("VendorField is not JSON");
-														}
-							
-														if (isjson === true)
-														{
-											
-	console.log(txdata);	
-											
-															var parsejson = JSON.parse(txdata.vendorField);
-											
-															if (parsejson.qae1)
-															{
-									
-																var txmessage = await qdb.findDocuments('transactions', {"txid": txdata.id});
-																if (txmessage.length == 0)
-																{
-																	try {
-																		var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
-																	} catch (e) {
-																		error_handle(e, 'parseTransaction', 'error');
-																	}
-																	processedItems = true;
-																}
-																else
-																{
-																	console.log('ERROR:	 We already have TXID: ' + txdata.id);
-																}
-									
-															}
-							
-														}
-							
-													}
-												
-													callbackeach();
-							
-												})();
-
-											}, function(err) {
-
-												if( err ) {
-													console.log('An error occurred in async.each in whilst');
-												} 
-											
-												(async () => {
-												
-													await processRingSignatures(thisblockheight, processedItems, pgclient, qdb);
-
-													await setAsync('qae_lastscanblock', thisblockheight);
-													await setAsync('qae_lastblockid', blockidcode);
-													
-													callback(null, count);
-											
-												})();
-
-											});
-
-	*/
-
 											(async () => {
 											
 												await processRingSignatures(thisblockheight, processedItems, pgclient, qdb);
@@ -601,7 +493,6 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 												callback(null, count);
 										
 											})();
-											
 
 										}
 										else
