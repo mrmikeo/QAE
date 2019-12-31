@@ -27,7 +27,7 @@ CORE_WEBHOOKS_HOST=0.0.0.0
 CORE_WEBHOOKS_PORT=4104
 ```
 
-Clone the repository and run:
+Clone the repository and setup config:
 
 ```
 npm install
@@ -36,11 +36,18 @@ cp qae.ini.example /etc/qae/qae.ini
 node qaeApiV2.js
 ```
 
-The server runs on the port set in the ini file.
+Run the programs:
 
-Currently the system supports the QAE-1 contract schema.   Additional schemas can be added later.
+```
+pm2 qaeApi.js
+pm2 qaeParser.js
+```
 
-QAE-1 Contract Methods:
+The server runs on the port set in the ini file.   If you want to run on a port < 1000, you'll need to run qaeApi.js with sudo
+
+Currently the system supports the QAE-1 contract schema (v14).   Additional schemas can be added later.
+
+QAE-1 (Schema v14) Contract Methods:
 
 ```
 GENESIS - Create a new token
