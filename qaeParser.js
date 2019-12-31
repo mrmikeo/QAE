@@ -400,12 +400,14 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 								
 											var trxcounter = 0;
 										
-											for (let ti = 0; ti < tresponse.rows.length; ti++)
-											{
+											(async () => {
 										
-												let origtxdata = tresponse.rows[ti];
+												for (let ti = 0; ti < tresponse.rows.length; ti++)
+												{
 										
-												(async () => {
+													let origtxdata = tresponse.rows[ti];
+										
+												//(async () => {
 										
 													var epochdate = new Date(Date.parse('2017-03-21 13:00:00'));
 													var unixepochtime = Math.round(epochdate.getTime()/1000);
@@ -479,9 +481,11 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 							
 													}
 																			
-												})();
+												
 										
-											}
+												}
+											
+											})();
 																
 											(async () => {
 											
