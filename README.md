@@ -1,9 +1,9 @@
-# QAE  -- Version 1.0.1
-Qredit Always Evolving Tokens
+# QAE  -- Version 1.1.1
+Qredit Always Evolving - An easy to use token system for both fungible (QAE-1) and non-fungible (QAE-2) tokens
 
-An API extension for the Qredit network to integrate Simple Token issuance and management
+This is a sidechain for the Qredit network to integrate Simple Token issuance and management
 
-This must be running on a Qredit Relay or Full node.
+This must be running on a Qredit Relay or Qredit Full node.
 
 Install Mongodb & Redis:  (Default settings are fine for testing)
 
@@ -33,10 +33,12 @@ Clone the repository and setup config:
 npm install
 mkdir /etc/qae/
 cp qae.ini.example /etc/qae/qae.ini
-node qaeApiV2.js
 ```
 
 Run the programs:
+
+qaeApi.js - The API interface to the QAE system
+qaeParser.js - The Qredit block parser
 
 ```
 pm2 qaeApi.js
@@ -45,9 +47,9 @@ pm2 qaeParser.js
 
 The server runs on the port set in the ini file.   If you want to run on a port < 1000, you'll need to run qaeApi.js with sudo
 
-Currently the system supports the QAE-1 contract schema (v14).   Additional schemas can be added later.
+Currently the system supports the QAE-1 contract schema (v15).   QAE-2 contract schema (v15) is currently in development.
 
-QAE-1 (Schema v14) Contract Methods:
+QAE-1 (Schema v15) Contract Methods:
 
 ```
 GENESIS - Create a new token
@@ -133,4 +135,80 @@ UNFREEZE:  (Recipent Address is whom you want to unfreeze)
 ```
 id = tokenIdHex (Hexidecimal)
 no = Notes  (String: Max 32 Characters)  (Optional)
+```
+
+
+QAE-2 (Schema v15) Contract Methods:
+
+```
+GENESIS - Create a new token
+PAUSE - Pause the contract.  Prevents any calls other than RESUME
+RESUME - Resume the contract.
+NEWOWNER - Change the owner of the contract.
+AUTHMETA - Authorize an address to add meta data
+REVOKEMETA - Revoke authorization to add meta data
+CLONE - Create new token by cloning this contract information
+ADDMETA - Add meta data to a contract
+```
+
+JSON Variables:
+
+GENESIS:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
+
+```
+sy = Symbol / Ticker  (String: 3-8 characters)
+na = Token Name  (String: 3-24 characters)
+du = Document URI  (String:  Max 32 characters)  (Optional)
+no = Notes  (String: Max 32 Characters)  (Optional)
+pa = Pausable (Boolean:  Default false)  (Optional)
+```
+
+PAUSE:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
+
+```
+id = tokenIdHex (Hexidecimal)
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
+
+UNPAUSE:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
+
+```
+id = tokenIdHex (Hexidecimal)
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
+NEWOWNER:  (Recipent Address is whom you are reassigning contract to)
+
+```
+id = tokenIdHex (Hexidecimal)
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
+
+AUTHMETA:  (Recipent Address is whom you are authorizing to add metadata)
+
+```
+id = tokenIdHex (Hexidecimal)
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
+
+REVOKEMETA:	  (Recipent Address is whom you are revoking access to add metadata)
+
+```
+id = tokenIdHex (Hexidecimal)
+no = Notes  (String: Max 32 Characters)  (Optional)
+```
+
+CLONE:
+
+```
+id = tokenIdHex (Hexidecimal)
+no = Notes  (String: Max 32 Characters)  (Optional - Leaveing blank will copy notes from original, providing will create new notes)
+```
+
+ADDMETA:
+
+```
+id = tokenIdHex (Hexidecimal)
+ch = Chunk number (Integer - Optional / 0 is Default -- If your metadata cannot fit into a single transaction, then chunk it into multiple, ie, 1 of 2, 2 of 2)
+na = Name  (String: Max 32 Characters --  name of meta info)
+dt = Data  (String -- stringified data for your meta)
 ```
