@@ -1,6 +1,6 @@
 /*
 *
-* QAE - Version 1.0.1
+* QAE - Version 1.1.1
 *
 * Qredit Always Evolving
 *
@@ -170,6 +170,32 @@ rclient.get('qae_lastscanblock', function(err, lbreply)
 				await qdb.createCollection('transactions', {});
 			}
 
+			exists = await qdb.doesCollectionExist('journal');
+			console.log("Does collection 'journal' Exist: " + exists);
+			if (exists == true)
+			{
+				console.log("Removing all documents from 'journal'");
+				await qdb.removeDocuments('journal', {});
+			}
+			else
+			{
+				console.log("Creating new collection 'journal'");
+				await qdb.createCollection('journal', {});
+			}
+
+			exists = await qdb.doesCollectionExist('metadata');
+			console.log("Does collection 'metadata' Exist: " + exists);
+			if (exists == true)
+			{
+				console.log("Removing all documents from 'metadata'");
+				await qdb.removeDocuments('metadata', {});
+			}
+			else
+			{
+				console.log("Creating new collection 'metadata'");
+				await qdb.createCollection('metadata', {});
+			}
+			
 			await qae.indexDatabase(qdb);
 			
 			await qdb.close();	
@@ -205,8 +231,6 @@ function blockNotifyQueue()
   		
 	rclienttwo.blpop('blockNotify', iniconfig.polling_interval, function(err, data)
 	{
-
-//console.log('bn:' + data);
 
 		if (data == 'blockNotify,new')
 		{
@@ -319,7 +343,6 @@ function doScan()
 				qdb.setClient(mclient);
 				
 				await whilstScanBlocks(scanBlockId, currentHeight, pgclient, qdb);
-				
 									
 			})();
 
@@ -448,14 +471,14 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 							
 														if (isjson === true)
 														{
-											
-console.log(txdata);	
-											
+
 															var parsejson = JSON.parse(txdata.vendorField);
 											
 															if (parsejson.qae1)
 															{
-									
+															
+console.log(txdata);
+
 																var txmessage = await qdb.findDocuments('transactions', {"txid": txdata.id});
 																if (txmessage.length == 0)
 																{
@@ -472,6 +495,27 @@ console.log(txdata);
 																}
 									
 															}
+															else if (parsejson.qae2)
+															{
+
+console.log(txdata);
+
+																var txmessage = await qdb.findDocuments('metadata', {"txid": txdata.id});
+																if (txmessage.length == 0)
+																{
+																	try {
+																		var qaeresult = await qae.parseTransaction(txdata, blockdata, qdb);
+																	} catch (e) {
+																		error_handle(e, 'parseTransaction', 'error');
+																	}
+																	processedItems = true;
+																}
+																else
+																{
+																	console.log('ERROR:	 We already have TXID: ' + txdata.id);
+																}
+															
+															}
 							
 														}
 							
@@ -481,7 +525,8 @@ console.log(txdata);
 										
 												}
 											
-												await processRingSignatures(thisblockheight, processedItems, pgclient, qdb);
+												// No longer use
+												//await processRingSignatures(thisblockheight, processedItems, pgclient, qdb);
 
 												await setAsync('qae_lastscanblock', thisblockheight);
 												await setAsync('qae_lastblockid', blockidcode);
@@ -504,7 +549,8 @@ console.log(txdata);
 								{
 									(async () => {
 							
-										await processRingSignatures(thisblockheight, false, pgclient, qdb);
+										// No longer use
+										//await processRingSignatures(thisblockheight, false, pgclient, qdb);
 
 										await setAsync('qae_lastscanblock', thisblockheight);
 										await setAsync('qae_lastblockid', blockidcode);
@@ -564,6 +610,8 @@ console.log(txdata);
 	});
 
 }
+
+/* No longer use this
 
 function processRingSignatures(thisblockheight, processedItems, pgclient, qdb)
 {
@@ -626,7 +674,7 @@ function processRingSignatures(thisblockheight, processedItems, pgclient, qdb)
 	});
 
 }
-
+*/
 
 function newblocknotify()
 {

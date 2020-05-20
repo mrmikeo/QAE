@@ -1,6 +1,6 @@
 /*
 *
-* QAE - Version 1.0.1
+* QAE - Version 1.1.1
 *
 * Qredit Always Evolving
 *
@@ -29,10 +29,6 @@ const { Client }  = require('pg');				 // Postgres
 const qreditjs	  = require("qreditjs");
 
 var iniconfig = ini.parse(fs.readFileSync('/etc/qae/qae.ini', 'utf-8'))
-
-// Qredit API Library  TODO no longer needed
-//const qreditApi = require("nodeQreditApi");
-//const qapi = new qreditApi.default(iniconfig.api_node);
 
 // Mongo Connection Details
 const mongoconnecturl = iniconfig.mongo_connection_string;
@@ -553,7 +549,7 @@ router.route('/tokensByOwner/:owner')
 
 		(async () => {
 		
-		var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+			var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
 		
 			var mclient = await qdbapi.connect();
 			qdbapi.setClient(mclient);
@@ -630,24 +626,32 @@ router.route('/getheight')
 		
 	});
 	
-router.route('/getRingSignature/:height')
+router.route('/getRingSignature/:journalid')
 	.get(function(req, res) {
 	
-		var height = parseInt(req.params.height);
+		var journalid = parseInt(req.params.journalid);
 
 		updateaccessstats(req);
 		
 		var message = {};
-
-		rclient.hget('qae_ringsignatures', height, function(err, reply)
-		{
+		
+		(async () => {
+		
+			var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
+			var mclient = await qdbapi.connect();
+			qdbapi.setClient(mclient);
 			
-			if (reply)
+			var dbreply = await qdbapi.findDocument('journal', {"_id": journalid});
+
+			qdbapi.close();
+			
+			if (dbreply)
 			{
 			
-				var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
+				var ringsignature = crypto.createHash('sha256').update(myIPAddress + dbreply.chainHash).digest('hex');
 
-				message = {ip: myIPAddress, port: parseInt(port), height: height, ringsignature: ringsignature}; //, debug: reply};
+				message = {ip: myIPAddress, port: parseInt(port), journalid: journalid, ringsignature: ringsignature};
 			
 				res.json(message);
 			
@@ -655,37 +659,43 @@ router.route('/getRingSignature/:height')
 			else
 			{
 
-				var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
-
-				message = {ip: myIPAddress, port: parseInt(port), height: height, ringsignature: '', error: 'Signature Not Found'};
+				message = {ip: myIPAddress, port: parseInt(port), journalid: journalid, ringsignature: '', error: 'Signature Not Found'};
 			
 				res.json(message);
 			
 			}
-			
-		});
+
+		})();
 		
 	});
 	
-router.route('/getRingSignature/:height/:callerport')
+router.route('/getRingSignature/:journalid/:callerport')
 	.get(function(req, res) {
 	
-		var height = parseInt(req.params.height);
+		var journalid = parseInt(req.params.journalid);
 		var callerport = parseInt(req.params.callerport);
 
 		updateaccessstats(req);
 		
 		var message = {};
 
-		rclient.hget('qae_ringsignatures', height, function(err, reply)
-		{
+		(async () => {
+		
+			var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
+			var mclient = await qdbapi.connect();
+			qdbapi.setClient(mclient);
 			
-			if (reply)
+			var dbreply = await qdbapi.findDocument('journal', {"_id": journalid});
+
+			qdbapi.close();
+			
+			if (dbreply)
 			{
 			
-				var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
+				var ringsignature = crypto.createHash('sha256').update(myIPAddress + dbreply.chainHash).digest('hex');
 
-				message = {ip: myIPAddress, port: parseInt(port), height: height, ringsignature: ringsignature};
+				message = {ip: myIPAddress, port: parseInt(port), journalid: journalid, ringsignature: ringsignature};
 			
 				res.json(message);
 			
@@ -693,15 +703,13 @@ router.route('/getRingSignature/:height/:callerport')
 			else
 			{
 
-				var ringsignature = crypto.createHash('sha256').update(myIPAddress + reply).digest('hex');
-
-				message = {ip: myIPAddress, port: parseInt(port), height: height, ringsignature: '', error: 'Signature Not Found'};
+				message = {ip: myIPAddress, port: parseInt(port), journalid: journalid, ringsignature: '', error: 'Signature Not Found'};
 			
 				res.json(message);
 			
 			}
-			
-		});
+
+		})();
 		
 		var callerip = getCallerIP(req).toString();
 		
@@ -837,94 +845,100 @@ function validatePeer(peerip, peerport)
 
 	var peerapiurl = "http://" + peerip + ":" + peerport + "/api";
 	
-	rclient.get('qae_lastscanblock', function(err, reply)
-	{
+	(async () => {
 	
-		var blockheight = parseInt(reply) - 1;
+		var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+	
+		var mclient = await qdbapi.connect();
+		qdbapi.setClient(mclient);
 		
-console.log("Validating " + peerip + ":" + peerport + " at height " + blockheight);
+		var sort = {"_id":-1};
+		
+		var dbreply = await qdbapi.findDocuments('journal', {}, 1, sort, 0);
 
-		rclient.hget('qae_ringsignatures', blockheight, function(err, replytwo)
-		{
+		qdbapi.close();
 		
-			if (replytwo)
-			{
+		if (dbreply)
+		{
+
+			var journalid = dbreply[0]['_id'];
+			var chainhash = dbreply[0]['chainHash'];
+
+console.log("Validating " + peerip + ":" + peerport + " at journalid " + journalid);
+
+			// This is what the peer hash should be
 			
-				// This is what the peer hash should be
-			
-				var ringsignature = crypto.createHash('sha256').update(peerip + replytwo).digest('hex');
+			var ringsignature = crypto.createHash('sha256').update(peerip + chainhash).digest('hex');
 
 console.log("RingSig should be: " + ringsignature);
 
-				request.get(peerapiurl + '/getRingSignature/' + blockheight + '/' + port, {json:true}, function (error, response, body) 
+			request.get(peerapiurl + '/getRingSignature/' + journalid + '/' + port, {json:true}, function (error, response, body) 
+			{
+			
+				if (error)
 				{
-				
-					if (error)
-					{
-						// An error occurred, cannot validate
+					// An error occurred, cannot validate
 console.log(error);					 
-						delete goodPeers[peerip + ":" + peerport];
-						delete badPeers[peerip + ":" + peerport];
-						unvalidatedPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport};
-						
-					}
-					else
+					delete goodPeers[peerip + ":" + peerport];
+					delete badPeers[peerip + ":" + peerport];
+					unvalidatedPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport};
+					
+				}
+				else
+				{
+					if (body && !body.error && body.ringsignature)
 					{
-						if (body && !body.error && body.ringsignature)
-						{
 
 console.log("RingSig received is: " + body.ringsignature);
 
-							if (body.ringsignature == ringsignature)
-							{
+						if (body.ringsignature == ringsignature)
+						{
+						
 console.log("Ring sig validated for peer: " + peerip + ":" + peerport);
-								// Validated
-								goodPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, lastCheckHeight: blockheight};
-								delete unvalidatedPeers[peerip + ":" + peerport];
-								delete badPeers[peerip + ":" + peerport];
-								getPeers(peerip + ":" + peerport);
-							
-							}
-							else
-							{
-							
-								delete goodPeers[peerip + ":" + peerport];
-								delete unvalidatedPeers[peerip + ":" + peerport];
-								badPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, lastCheckHeight: blockheight};
-							
-							}
+
+							// Validated
+							goodPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, lastJournalId: journalid};
+							delete unvalidatedPeers[peerip + ":" + peerport];
+							delete badPeers[peerip + ":" + peerport];
+							getPeers(peerip + ":" + peerport);
 						
 						}
 						else
 						{
-
-console.log("Unable to validate at height: " + blockheight);
-
-							// Cannot validate
+						
 							delete goodPeers[peerip + ":" + peerport];
-							delete badPeers[peerip + ":" + peerport];
-							unvalidatedPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport};
+							delete unvalidatedPeers[peerip + ":" + peerport];
+							badPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport, lastJournalId: journalid};
 						
 						}
 					
 					}
+					else
+					{
+
+console.log("Unable to validate at journalid: " + journalid);
+
+						// Cannot validate
+						delete goodPeers[peerip + ":" + peerport];
+						delete badPeers[peerip + ":" + peerport];
+						unvalidatedPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport};
+					
+					}
+				
+				}
+	
+			});
+
 		
-				});
-			
-			}
-			else
-			{
-console.log("We do not have this ringsig: " + blockheight);
-				// Cannot validate this height
-				delete goodPeers[peerip + ":" + peerport];
-				delete badPeers[peerip + ":" + peerport];
-				unvalidatedPeers[peerip + ":" + peerport] = {ip: peerip, port: peerport};
-							
-			}
-			
-		});
+		}
+		else
+		{
+
+console.log("We cannot get ringsig info from journal db... ");
 		
-	});
+		}
+
+	})();
 
 }
 
