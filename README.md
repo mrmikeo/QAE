@@ -197,14 +197,14 @@ id = tokenIdHex (Hexidecimal)
 no = Notes  (String: Max 32 Characters)  (Optional)
 ```
 
-CLONE:
+CLONE:   (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
 
 ```
 id = tokenIdHex (Hexidecimal)
 no = Notes  (String: Max 32 Characters)  (Optional - Leaveing blank will copy notes from original, providing will create new notes)
 ```
 
-ADDMETA:
+ADDMETA:   (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
 
 ```
 id = tokenIdHex (Hexidecimal)
