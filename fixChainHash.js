@@ -27,6 +27,8 @@ var prevRecordHash = '';
 	
 	var dbreply = await qdbapi.findDocumentsWithId('journal', {}, 1000, sort, 0);
 
+console.log(dbreply);
+
 	for (let i = 0; i < dbreply.length; i++ )
 	{
 	
