@@ -195,6 +195,14 @@ rclient.get('qae_lastscanblock', function(err, lbreply)
 				console.log("Creating new collection 'metadata'");
 				await qdb.createCollection('metadata', {});
 			}
+
+			exists = await qdb.doesCollectionExist('counters');
+			console.log("Does collection 'counters' Exist: " + counters);
+			if (exists == true)
+			{
+				console.log("Removing all documents from 'counters'");
+				await qdb.removeDocuments('counters', {});
+			}
 			
 			await qae.indexDatabase(qdb);
 			
