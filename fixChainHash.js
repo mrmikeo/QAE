@@ -27,6 +27,27 @@ var prevRecordHash = '';
 	
 	var dbreply = await qdbapi.findDocumentsWithId('journal', {}, 1000000, sort, 0);
 
+	// do recordshash
+
+	for (let i = 0; i < dbreply.length; i++ )
+	{
+	
+		var dbdata = dbreply[i];
+		
+		var recordHash = SparkMD5.hash(dbdata.action + '' + JSON.stringify(dbdata.fieldData) + '' + JSON.stringify(dbdata.recordData));
+			
+		await qdbapi.updateDocument('journal', {"_id": dbdata["_id"] }, {"recordHash": recordHash});
+
+		if (i%100 == 0) console.log(i);	
+		
+
+	}
+
+
+
+
+	// do chainhash
+
 	for (let i = 0; i < dbreply.length; i++ )
 	{
 	
