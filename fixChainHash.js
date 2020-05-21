@@ -1,3 +1,5 @@
+const fs		  = require('fs');				 // so we can read the config ini file from disk
+const ini		  = require('ini');				 // so we can parse the ini files properties
 const Big		  = require('big.js');			 // required unless you want floating point math issues
 const SparkMD5	  = require('spark-md5');  		 // Faster than crypto for md5
 const {promisify} = require('util');			 // Promise functions
