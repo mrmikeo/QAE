@@ -73,7 +73,7 @@ const qae = new qaeSchema.default();
 
 const qaeactivationHeight = 2859480;
 const qaeactivationBlockId = 'c36c7920a5194e67c646145c54051d22f9b2f192cf458da8683e34af4a1582ac';
-const qaeactivationRingSig = 'd09a4678959edd868a6d96dfdff286c43b0d3264193af20eb56a808e8a0b1397';
+//const qaeactivationRingSig = 'd09a4678959edd868a6d96dfdff286c43b0d3264193af20eb56a808e8a0b1397';
 
 // Declaring some variable defaults
 
@@ -117,11 +117,11 @@ rclient.get('qae_lastscanblock', function(err, lbreply)
 
 			await delAsync('qae_lastscanblock');
 			await delAsync('qae_lastblockid');
-			await delAsync('qae_ringsignatures');
+			//await delAsync('qae_ringsignatures');
 		
 			await setAsync('qae_lastscanblock', qaeactivationHeight);
 			await setAsync('qae_lastblockid', qaeactivationBlockId);
-			await hsetAsync('qae_ringsignatures', qaeactivationHeight, qaeactivationRingSig);
+			//await hsetAsync('qae_ringsignatures', qaeactivationHeight, qaeactivationRingSig);
 			
 			// Remove items from MongoDB
 			
