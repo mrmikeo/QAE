@@ -861,6 +861,8 @@ function validatePeer(peerip, peerport)
 		if (dbreply)
 		{
 
+console.log(dbreply);
+
 			var journalid = dbreply[0]['_id'];
 			var chainhash = dbreply[0]['chainHash'];
 
