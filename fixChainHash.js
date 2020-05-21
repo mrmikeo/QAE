@@ -36,7 +36,7 @@ var prevRecordHash = '';
 	
 		prevRecordHash = dbdata.recordHash;
 		
-		await qdb.updateDocument('journal', {"_id": dbdata["_id"] }, {"chainHash": chainHash});
+		await qdbapi.updateDocument('journal', {"_id": dbdata["_id"] }, {"chainHash": chainHash});
 
 		if (i%100 == 0) console.log(i);	
 		
