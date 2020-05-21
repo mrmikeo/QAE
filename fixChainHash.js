@@ -25,9 +25,7 @@ var prevRecordHash = '';
 	
 	var sort = {"_id":-1};
 	
-	var dbreply = await qdbapi.findDocumentsWithId('journal', {}, 1000, sort, 0);
-
-console.log(dbreply);
+	var dbreply = await qdbapi.findDocumentsWithId('journal', {}, 1000000, sort, 0);
 
 	for (let i = 0; i < dbreply.length; i++ )
 	{
@@ -40,8 +38,9 @@ console.log(dbreply);
 		
 		await qdb.updateDocument('journal', {"_id": dbdata["_id"] }, {"chainHash": chainHash});
 
-		if (i%100 == 0) console.log(i);
+		if (i%100 == 0) console.log(i);node -c fi	
+		
 
 	}
 	
-});
+})();
