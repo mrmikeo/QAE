@@ -197,7 +197,7 @@ rclient.get('qae_lastscanblock', function(err, lbreply)
 			}
 
 			exists = await qdb.doesCollectionExist('counters');
-			console.log("Does collection 'counters' Exist: " + counters);
+			console.log("Does collection 'counters' Exist: " + exists);
 			if (exists == true)
 			{
 				console.log("Removing all documents from 'counters'");
