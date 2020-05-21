@@ -854,7 +854,7 @@ function validatePeer(peerip, peerport)
 		
 		var sort = {"_id":-1};
 		
-		var dbreply = await qdbapi.findDocuments('journal', {}, 1, sort, 0);
+		var dbreply = await qdbapi.findDocumentsWithId('journal', {}, 1, sort, 0);
 
 		qdbapi.close();
 		
