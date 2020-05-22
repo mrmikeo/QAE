@@ -720,6 +720,56 @@ router.route('/getRingSignature/:journalid/:callerport')
 		
 	});
 	
+router.route('/getJournals/:start/:end')
+	.get(function(req, res) {
+	
+		var startjournalid = parseInt(req.params.start);
+		var endjournalid = parseInt(req.params.end);
+
+		updateaccessstats(req);
+		
+		var message = {};
+
+		(async () => {
+		
+			var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
+			var mclient = await qdbapi.connect();
+			qdbapi.setClient(mclient);
+			
+			var dbreply = await qdbapi.findDocuments('journal', { $and: [ { "_id": { $gte: startjournalid } }, { "_id": { $lte: endjournalid } } ] });
+
+			qdbapi.close();
+			
+			if (dbreply)
+			{
+			
+				for (let i = 0; i < dbreply.length; i++)
+				{
+				
+					var mbody = dbreply[i];
+					mbody['chainHash'] = '';
+					
+					message.push(mbody);
+			
+				}
+				
+				res.json(message);
+			
+			}
+			else
+			{
+
+				message = [];
+			
+				res.json(message);
+			
+			}
+
+		})();
+		
+	});
+	
 /////
 // Catch any unmatching routes
 /////	 
