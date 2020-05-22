@@ -109,7 +109,7 @@ id = tokenIdHex (Hexidecimal)
 no = Notes  (String: Max 32 Characters)  (Optional)
 ```
 
-UNPAUSE:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
+RESUME:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
 
 ```
 id = tokenIdHex (Hexidecimal)
@@ -170,7 +170,7 @@ id = tokenIdHex (Hexidecimal)
 no = Notes  (String: Max 32 Characters)  (Optional)
 ```
 
-UNPAUSE:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
+RESUME:  (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
 
 ```
 id = tokenIdHex (Hexidecimal)

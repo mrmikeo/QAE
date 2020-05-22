@@ -411,6 +411,31 @@ router.route('/transaction/:txid')
 		})();
 				
 	});
+
+router.route('/metadata/:txid')
+	.get(function(req, res) {
+
+		var txid = req.params.txid;
+
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+		var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
+			var mclient = await qdbapi.connect();
+			qdbapi.setClient(mclient);
+			message = await qdbapi.findDocuments('metadata', {"txid": txid});
+
+			qdbapi.close();
+			
+			res.json(message);
+		
+		})();
+				
+	});
 	
 router.route('/transactions/:tokenid')
 	.get(function(req, res) {
@@ -449,6 +474,52 @@ router.route('/transactions/:tokenid')
 			var mquery = {"transactionDetails.tokenIdHex":tokenid};
 			
 			message = await qdbapi.findDocuments('transactions', mquery, limit, sort, skip);
+
+			qdbapi.close();
+			
+			res.json(message);
+		
+		})();
+				
+	});
+	
+router.route('/metadata/:tokenid')
+	.get(function(req, res) {
+
+		var tokenid = req.params.tokenid;
+
+		var limit = 100;
+
+		if (req.query.limit)
+		{
+			limit = parseInt(req.query.limit);
+		}
+
+		var page = 1;
+
+		if (req.query.page)
+		{
+			page = parseInt(req.query.page);
+		}
+		
+		var skip = (page - 1) * limit;
+
+		var sort = {"metaDetails.timestamp_unix":1, "metaDetails.chunk":1};
+
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+		var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
+			var mclient = await qdbapi.connect();
+			qdbapi.setClient(mclient);
+			
+			var mquery = {"metaDetails.tokenIdHex":tokenid};
+			
+			message = await qdbapi.findDocuments('metadata', mquery, limit, sort, skip);
 
 			qdbapi.close();
 			

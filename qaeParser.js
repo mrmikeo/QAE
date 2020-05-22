@@ -73,7 +73,6 @@ const qae = new qaeSchema.default();
 
 const qaeactivationHeight = 2859480;
 const qaeactivationBlockId = 'c36c7920a5194e67c646145c54051d22f9b2f192cf458da8683e34af4a1582ac';
-//const qaeactivationRingSig = 'd09a4678959edd868a6d96dfdff286c43b0d3264193af20eb56a808e8a0b1397';
 
 // Declaring some variable defaults
 
@@ -117,11 +116,9 @@ rclient.get('qae_lastscanblock', function(err, lbreply)
 
 			await delAsync('qae_lastscanblock');
 			await delAsync('qae_lastblockid');
-			//await delAsync('qae_ringsignatures');
 		
 			await setAsync('qae_lastscanblock', qaeactivationHeight);
 			await setAsync('qae_lastblockid', qaeactivationBlockId);
-			//await hsetAsync('qae_ringsignatures', qaeactivationHeight, qaeactivationRingSig);
 			
 			// Remove items from MongoDB
 			
@@ -291,6 +288,23 @@ function downloadChain()
 
 }
 
+function syncJournalFromPeer()
+{
+
+
+
+
+
+}
+
+function rebuildDbFromJournal()
+{
+
+
+
+
+
+}
 
 function doScan()
 {
@@ -534,7 +548,6 @@ console.log(txdata);
 												}
 											
 												// No longer use
-												//await processRingSignatures(thisblockheight, processedItems, pgclient, qdb);
 
 												await setAsync('qae_lastscanblock', thisblockheight);
 												await setAsync('qae_lastblockid', blockidcode);
@@ -558,7 +571,6 @@ console.log(txdata);
 									(async () => {
 							
 										// No longer use
-										//await processRingSignatures(thisblockheight, false, pgclient, qdb);
 
 										await setAsync('qae_lastscanblock', thisblockheight);
 										await setAsync('qae_lastblockid', blockidcode);
@@ -618,71 +630,6 @@ console.log(txdata);
 	});
 
 }
-
-/* No longer use this
-
-function processRingSignatures(thisblockheight, processedItems, pgclient, qdb)
-{
-
-	return new Promise(resolve => {
-
-		(async () => {
-
-			if (parseInt(thisblockheight) > parseInt(qaeactivationHeight))
-			{
-							
-				rclient.hget('qae_ringsignatures', (parseInt(thisblockheight) - 1), function(err, reply)
-				{
-		
-					previoushash = reply;
-
-					(async () => {
-
-						if (processedItems == true || sigblockhash == '' || sigtokenhash == '' || sigaddrhash == '' || sigtrxhash == '')
-						{				
-
-							// Only check if new things were processed or we have empty vars
-							
-							var message = await pgclient.query('SELECT * FROM blocks WHERE height = $1 LIMIT 1', [thisblockheight]);
-												
-							sigblockhash = message.rows[0].id;
-							sigtokenhash = await qdb.findDocumentHash('tokens', {"lastUpdatedBlock": {$lte: thisblockheight}}, "tokenDetails.tokenIdHex", {"_id":-1});
-							sigaddrhash = await qdb.findDocumentHash('addresses', {"lastUpdatedBlock": {$lte: thisblockheight}}, "recordId", {"_id":-1});
-							sigtrxhash = await qdb.findDocumentHash('transactions', {"blockHeight": {$lte: thisblockheight}}, "txid", {"_id":-1});
-
-						}
-			
-						fullhash = crypto.createHash('sha256').update(previoushash + sigblockhash + sigtokenhash + sigaddrhash + sigtrxhash).digest('hex');
-		
-						rclient.hset('qae_ringsignatures', thisblockheight, fullhash, function(err, reply)
-						{
-								
-							resolve(true);
-		
-						});
-		
-					})();
-		
-				});
-																							
-			}
-			else
-			{
-			
-				// First Block @ QAE Activation
-				
-				await hsetAsync('qae_ringsignatures', thisblockheight, qaeactivationRingSig);
-								
-				resolve(true);
-										  
-			}
-	
-		})();
-	
-	});
-
-}
-*/
 
 function newblocknotify()
 {
