@@ -708,6 +708,8 @@ function error_handle(error, caller = 'unknown', severity = 'error')
 	var scriptname = 'qaeParser.js';
 
 	console.log("Error Handle has been called!");
+	
+	console.log(error);
 
 	let transporter = nodemailer.createTransport({
 		sendmail: true,
