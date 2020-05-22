@@ -728,7 +728,7 @@ router.route('/getJournals/:start/:end')
 
 		updateaccessstats(req);
 		
-		var message = {};
+		var message = [];
 
 		(async () => {
 		
@@ -759,8 +759,6 @@ router.route('/getJournals/:start/:end')
 			}
 			else
 			{
-
-				message = [];
 			
 				res.json(message);
 			
