@@ -845,6 +845,8 @@ function newblocknotify()
 function validatePeer(peerip, peerport)
 {
 
+	if (peerip == myIPAddress) return false;
+
 	peerport = parseInt(peerport);
 
 	var peerapiurl = "http://" + peerip + ":" + peerport + "/api";
@@ -864,8 +866,6 @@ function validatePeer(peerip, peerport)
 		
 		if (dbreply)
 		{
-
-console.log(dbreply);
 
 			var journalid = dbreply[0]['_id'];
 			var chainhash = dbreply[0]['chainHash'];
