@@ -194,6 +194,59 @@ router.route('/token/:id')
 		
 	});
 
+router.route('/tokenWithMeta/:id')
+	.get(function(req, res) {
+
+		var tokenid = req.params.id;
+		
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+			var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
+			var mclient = await qdbapi.connect();
+			qdbapi.setClient(mclient);
+			
+			message = await qdbapi.findDocuments('tokens', {'tokenDetails.tokenIdHex': tokenid});
+			
+			message.metadata = await qdbapi.findDocuments('metadata', {"metaDetails.tokenIdHex":tokenid}, 9999, {"metaDetails.timestamp_unix":1, "metaDetails.chunk":1}, 0);
+			
+			qdbapi.close();
+			
+			res.json(message);
+		
+		})();
+		
+	});
+	
+router.route('/tokenByTxid/:txid')
+	.get(function(req, res) {
+
+		var txid = req.params.txid;
+		
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+			var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
+			var mclient = await qdbapi.connect();
+			qdbapi.setClient(mclient);
+			message = await qdbapi.findDocuments('tokens', {'tokenStats.creation_transaction_id': txid});
+
+			qdbapi.close();
+			
+			res.json(message);
+		
+		})();
+		
+	});
+	
 router.route('/addresses')
 	.get(function(req, res) {
 
@@ -411,31 +464,6 @@ router.route('/transaction/:txid')
 		})();
 				
 	});
-
-router.route('/metadata/:txid')
-	.get(function(req, res) {
-
-		var txid = req.params.txid;
-
-		updateaccessstats(req);
-		
-		var message = [];
-
-		(async () => {
-		
-		var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
-		
-			var mclient = await qdbapi.connect();
-			qdbapi.setClient(mclient);
-			message = await qdbapi.findDocuments('metadata', {"txid": txid});
-
-			qdbapi.close();
-			
-			res.json(message);
-		
-		})();
-				
-	});
 	
 router.route('/transactions/:tokenid')
 	.get(function(req, res) {
@@ -482,53 +510,7 @@ router.route('/transactions/:tokenid')
 		})();
 				
 	});
-	
-router.route('/metadata/:tokenid')
-	.get(function(req, res) {
 
-		var tokenid = req.params.tokenid;
-
-		var limit = 100;
-
-		if (req.query.limit)
-		{
-			limit = parseInt(req.query.limit);
-		}
-
-		var page = 1;
-
-		if (req.query.page)
-		{
-			page = parseInt(req.query.page);
-		}
-		
-		var skip = (page - 1) * limit;
-
-		var sort = {"metaDetails.timestamp_unix":1, "metaDetails.chunk":1};
-
-		updateaccessstats(req);
-		
-		var message = [];
-
-		(async () => {
-		
-		var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
-		
-			var mclient = await qdbapi.connect();
-			qdbapi.setClient(mclient);
-			
-			var mquery = {"metaDetails.tokenIdHex":tokenid};
-			
-			message = await qdbapi.findDocuments('metadata', mquery, limit, sort, skip);
-
-			qdbapi.close();
-			
-			res.json(message);
-		
-		})();
-				
-	});
-	
 router.route('/transactions/:tokenid/:address')
 	.get(function(req, res) {
 
@@ -590,6 +572,133 @@ router.route('/transactions/:tokenid/:address')
 				
 	});
 	
+router.route('/metadata/:txid')
+	.get(function(req, res) {
+
+		var txid = req.params.txid;
+
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+		var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
+			var mclient = await qdbapi.connect();
+			qdbapi.setClient(mclient);
+			message = await qdbapi.findDocuments('metadata', {"txid": txid});
+
+			qdbapi.close();
+			
+			res.json(message);
+		
+		})();
+				
+	});
+	
+router.route('/metadata/:tokenid')
+	.get(function(req, res) {
+
+		var tokenid = req.params.tokenid;
+
+		var limit = 100;
+
+		if (req.query.limit)
+		{
+			limit = parseInt(req.query.limit);
+		}
+
+		var page = 1;
+
+		if (req.query.page)
+		{
+			page = parseInt(req.query.page);
+		}
+		
+		var skip = (page - 1) * limit;
+
+		var sort = {"metaDetails.timestamp_unix":1, "metaDetails.chunk":1};
+
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+		var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
+			var mclient = await qdbapi.connect();
+			qdbapi.setClient(mclient);
+			
+			var mquery = {"metaDetails.tokenIdHex":tokenid};
+			
+			message = await qdbapi.findDocuments('metadata', mquery, limit, sort, skip);
+
+			qdbapi.close();
+			
+			res.json(message);
+		
+		})();
+				
+	});
+
+router.route('/metadata/:tokenid/:address')
+	.get(function(req, res) {
+
+		var tokenid = req.params.tokenid;
+		var address = req.params.address;
+
+		var limit = 100;
+
+		if (req.query.limit)
+		{
+			limit = parseInt(req.query.limit);
+		}
+
+		var page = 1;
+
+		if (req.query.page)
+		{
+			page = parseInt(req.query.page);
+		}
+		
+		var skip = (page - 1) * limit;
+
+		var sort = {"metaDetails.timestamp_unix":1, "metaDetails.chunk":1};
+		
+		updateaccessstats(req);
+		
+		var message = [];
+
+		(async () => {
+		
+			var qdbapi = new qaeDB.default(mongoconnecturl, mongodatabase);
+		
+			var mclient = await qdbapi.connect();
+			qdbapi.setClient(mclient);
+			
+			var mquery = {
+				$and : 
+				[
+					{ 
+						"metaDetails.posterAddress": address
+					},
+					{ 
+						"metaDetails.tokenIdHex":tokenid
+					}
+				]
+			};
+			
+			message = await qdbapi.findDocuments('metadata', mquery, limit, sort, skip);
+
+			qdbapi.close();
+			
+			res.json(message);
+		
+		})();
+				
+	});
 
 router.route('/tokensByOwner/:owner')
 	.get(function(req, res) {
@@ -658,7 +767,7 @@ router.route('/newblocknotify')
 		
 	});
 	
-router.route('/peerinfo')
+router.route('/peerInfo')
 	.get(function(req, res) {
 
 		updateaccessstats(req);
@@ -671,7 +780,7 @@ router.route('/peerinfo')
 		
 	});
 	
-router.route('/getheight')
+router.route('/getHeight')
 	.get(function(req, res) {
 	
 		updateaccessstats(req);
@@ -1070,7 +1179,7 @@ console.log("We cannot get ringsig info from journal db... ");
 function getSeedPeers()
 {
 
-	request.get(seedNode + '/peerinfo', {json:true}, function (error, response, body) 
+	request.get(seedNode + '/peerInfo', {json:true}, function (error, response, body) 
 	{
 				
 		if (error)
