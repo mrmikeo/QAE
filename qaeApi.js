@@ -184,7 +184,7 @@ router.route('/token/:id')
 		
 			var mclient = await qdbapi.connect();
 			qdbapi.setClient(mclient);
-			message = await qdbapi.findDocuments('tokens', {'tokenDetails.tokenIdHex': tokenid});
+			message = await qdbapi.findDocument('tokens', {'tokenDetails.tokenIdHex': tokenid});
 
 			qdbapi.close();
 			
@@ -210,7 +210,7 @@ router.route('/tokenWithMeta/:id')
 			var mclient = await qdbapi.connect();
 			qdbapi.setClient(mclient);
 			
-			message = await qdbapi.findDocuments('tokens', {'tokenDetails.tokenIdHex': tokenid});
+			message = await qdbapi.findDocument('tokens', {'tokenDetails.tokenIdHex': tokenid});
 			
 			message.metadata = await qdbapi.findDocuments('metadata', {"metaDetails.tokenIdHex":tokenid}, 9999, {"metaDetails.timestamp_unix":1, "metaDetails.chunk":1}, 0);
 			
