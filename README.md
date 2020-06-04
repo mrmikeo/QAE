@@ -149,6 +149,7 @@ AUTHMETA - Authorize an address to add meta data
 REVOKEMETA - Revoke authorization to add meta data
 CLONE - Create new token by cloning this contract information
 ADDMETA - Add meta data to a contract
+VOIDMETA - Mark a previously added meta data as void
 ```
 
 JSON Variables:
@@ -205,6 +206,15 @@ no = Notes  (String: Max 32 Characters)  (Optional - Leaveing blank will copy no
 ```
 
 ADDMETA:   (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
+
+```
+id = tokenIdHex (Hexidecimal)
+ch = Chunk number (Integer - Optional / 0 is Default -- If your metadata cannot fit into a single transaction, then chunk it into multiple, ie, 1 of 2, 2 of 2)
+na = Name  (String: Max 32 Characters --  name of meta info)
+dt = Data  (String -- stringified data for your meta)
+```
+
+VOIDMETA:   (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87JC)
 
 ```
 id = tokenIdHex (Hexidecimal)
