@@ -471,8 +471,8 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 													if (origtxdata.vendor_field != null && origtxdata.vendor_field != '')
 													{
 														try {
-															console.log(origtxdata.vendor_field.toString());
-															txdata.vendorField = hex_to_ascii(origtxdata.vendor_field.toString());
+															//console.log(origtxdata.vendor_field.toString());
+															txdata.vendorField = hex_to_ascii(origtxdata.vendor_field);
 														}
 														catch (e)
 														{
