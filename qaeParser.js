@@ -440,7 +440,7 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 								if (parseInt(blocktranscount) > 0 && thisblockheight >= qaeactivationHeight)
 								{
 				
-									pgclient.query('SELECT * FROM transactions WHERE block_id = $1 ORDER BY sequence ASC', [blockidcode], (err, tresponse) => {
+									pgclient.query('SELECT *, decode(vendor_field, "escape") AS vendor_field_hex FROM transactions WHERE block_id = $1 ORDER BY sequence ASC', [blockidcode], (err, tresponse) => {
 				
 										if (tresponse && tresponse.rows)
 										{
