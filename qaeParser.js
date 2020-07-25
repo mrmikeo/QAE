@@ -440,7 +440,7 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 								if (parseInt(blocktranscount) > 0 && thisblockheight >= qaeactivationHeight)
 								{
 				
-									pgclient.query('SELECT *, decode(vendor_field, "escape") AS vendor_field_hex FROM transactions WHERE block_id = $1 ORDER BY sequence ASC', [blockidcode], (err, tresponse) => {
+									pgclient.query('SELECT * FROM transactions WHERE block_id = $1 ORDER BY sequence ASC', [blockidcode], (err, tresponse) => {
 				
 										if (tresponse && tresponse.rows)
 										{
@@ -468,9 +468,15 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 													txdata.sender = qreditjs.crypto.getAddress(origtxdata.sender_public_key);
 													txdata.senderPublicKey = origtxdata.sender_public_key;
 													txdata.recipient = origtxdata.recipient_id
-													if (origtxdata.vendor_field_hex != null && origtxdata.vendor_field_hex != '')
+													if (origtxdata.vendor_field != null && origtxdata.vendor_field != '' && origtxdata.vendor_field != '\000')
 													{
-														txdata.vendorField = hex_to_ascii(origtxdata.vendor_field_hex.toString());
+														try {
+															txdata.vendorField = hex_to_ascii(origtxdata.vendor_field.toString());
+														}
+														catch (e)
+														{
+															txdata.vendorField = null;
+														}
 													}
 													else
 													{
