@@ -468,9 +468,10 @@ async function whilstScanBlocks(count, max, pgclient, qdb)
 													txdata.sender = qreditjs.crypto.getAddress(origtxdata.sender_public_key);
 													txdata.senderPublicKey = origtxdata.sender_public_key;
 													txdata.recipient = origtxdata.recipient_id
-													if (origtxdata.vendor_field != null && origtxdata.vendor_field != '' && origtxdata.vendor_field != '\000')
+													if (origtxdata.vendor_field != null && origtxdata.vendor_field != '')
 													{
 														try {
+															console.log(origtxdata.vendor_field.toString());
 															txdata.vendorField = hex_to_ascii(origtxdata.vendor_field.toString());
 														}
 														catch (e)
