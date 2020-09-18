@@ -1001,7 +1001,7 @@ router.route('/vendor_qae1_genesis')
 			if (req.query.mi)
 				jsonobject.qae1.mi = req.body.mintable;
 				
-			res.status(200).json(JSON.stringify(jsonobject));
+			res.status(200).send(JSON.stringify(jsonobject));
 			
 		} catch (e) {
 
@@ -1064,7 +1064,7 @@ router.route('/vendor_qae1_burn')
 				if (req.query.notes)	
 					jsonobject.qae1.no = req.body.notes;
 				
-				res.status(200).json(JSON.stringify(jsonobject));
+				res.status(200).send(JSON.stringify(jsonobject));
 			
 			} catch (e) {
 
@@ -1129,7 +1129,7 @@ router.route('/vendor_qae1_mint')
 				if (req.query.notes)	
 					jsonobject.qae1.no = req.body.notes;
 				
-				res.status(200).json(JSON.stringify(jsonobject));
+				res.status(200).send(JSON.stringify(jsonobject));
 			
 			} catch (e) {
 
@@ -1194,7 +1194,7 @@ router.route('/vendor_qae1_send')
 				if (req.query.notes)	
 					jsonobject.qae1.no = req.body.notes;
 				
-				res.status(200).json(JSON.stringify(jsonobject));
+				res.status(200).send(JSON.stringify(jsonobject));
 			
 			} catch (e) {
 
@@ -1243,7 +1243,7 @@ router.route('/vendor_qae1_pause')
 				if (req.query.notes)	
 					jsonobject.qae1.no = req.body.notes;
 				
-				res.status(200).json(JSON.stringify(jsonobject));
+				res.status(200).send(JSON.stringify(jsonobject));
 			
 			} catch (e) {
 
@@ -1292,7 +1292,7 @@ router.route('/vendor_qae1_resume')
 				if (req.query.notes)	
 					jsonobject.qae1.no = req.body.notes;
 				
-				res.status(200).json(JSON.stringify(jsonobject));
+				res.status(200).send(JSON.stringify(jsonobject));
 			
 			} catch (e) {
 
@@ -1341,7 +1341,7 @@ router.route('/vendor_qae1_newowner')
 				if (req.query.notes)	
 					jsonobject.qae1.no = req.body.notes;
 				
-				res.status(200).json(JSON.stringify(jsonobject));
+				res.status(200).send(JSON.stringify(jsonobject));
 			
 			} catch (e) {
 
@@ -1390,7 +1390,7 @@ router.route('/vendor_qae1_freeze')
 				if (req.query.notes)	
 					jsonobject.qae1.no = req.body.notes;
 				
-				res.status(200).json(JSON.stringify(jsonobject));
+				res.status(200).send(JSON.stringify(jsonobject));
 			
 			} catch (e) {
 
@@ -1439,7 +1439,7 @@ router.route('/vendor_qae1_unfreeze')
 				if (req.query.notes)	
 					jsonobject.qae1.no = req.body.notes;
 				
-				res.status(200).json(JSON.stringify(jsonobject));
+				res.status(200).send(JSON.stringify(jsonobject));
 			
 			} catch (e) {
 
