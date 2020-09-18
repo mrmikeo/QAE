@@ -948,6 +948,66 @@ router.route('/getJournals/:start/:end')
 		})();
 		
 	});
+
+router.route('/vendor_qae1_genesis')
+	.post(function(req, res) {
+	
+		updateaccessstats(req);
+		
+		var requiredfields = ['decimals','symbol','name','quantity'];
+		
+		for (let i = 0; i < requiredfields.length; i++)
+		{
+		
+			var fieldname = requiredfields[i];
+
+			if (!req.body[fieldname])
+			{
+
+				message = {error: {code: 10001, message: 'Validation Error', description: 'Missing "' + fieldname + '" field.'}};
+				res.status(400).json(message);
+						
+			}
+		
+		}
+		
+		try {
+		
+			var jsonobject = {};
+		
+			jsonobject.de = req.body.decimals;
+			jsonobject.sy = req.body.symbol;
+			jsonobject.na = req.body.name;
+		
+		
+			var adjustdecimals = parseInt(req.body.decimals);
+			var adjustexponent = '1e' + adjustdecimals;
+			var neweamount = Big(req.body.quantity).times(adjustexponent).toFixed(0);
+		
+			jsonobject.qt = neweamount;
+		
+			if (req.body.uri)
+				jsonobject.du = req.body.uri;
+			
+			if (req.body.notes)	
+				jsonobject.no = req.body.notes;
+		
+			if (req.body.pa)
+				jsonobject.pa = req.body.pausable;
+		
+			if (req.body.mi)
+				jsonobject.mi = req.body.mintable;
+				
+			res.status(200).json(JSON.stringify(jsonobject));
+			
+		} catch (e) {
+
+			message = {error: {code: 400, message: 'Unknown Error', description: 'Check your inputs to ensure they are properly formatted.'}};
+			res.status(400).json(message);
+		
+		}
+		
+	});
 	
 /////
 // Catch any unmatching routes

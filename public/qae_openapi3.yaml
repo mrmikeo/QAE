@@ -256,7 +256,9 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Address'
+                  oneOf:
+                  - $ref: '#/components/schemas/AddressQAE1'
+                  - $ref: '#/components/schemas/AddressQAE2'
         400:
           description: Address not found
           content:
@@ -283,7 +285,9 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Address'
+                  oneOf:
+                  - $ref: '#/components/schemas/AddressQAE1'
+                  - $ref: '#/components/schemas/AddressQAE2'
         400:
           description: Address not found
           content:
@@ -310,7 +314,9 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Address'
+                  oneOf:
+                  - $ref: '#/components/schemas/AddressQAE1'
+                  - $ref: '#/components/schemas/AddressQAE2'
         400:
           description: Address not found
           content:
@@ -444,7 +450,7 @@ paths:
     get:
       tags:
       - QAE1/QAE2
-      summary: Get a listing of tokens
+      summary: Get a listing of transactions
       parameters:
       - name: limit
         in: query
@@ -576,6 +582,621 @@ paths:
                   $ref: '#/components/schemas/MetaData'
         400:
           description: Currency not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae1_genesis:
+    post:
+      tags:
+      - VendorField QAE1
+      summary: Generate VendorField JSON String for QAE1:GENESIS
+      parameters:
+      - name: decimals
+        in: query
+        required: true
+        schema:
+          type: integer
+          description: Number of decimal places the token has
+      - name: symbol
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: name
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: uri
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: quantity
+        in: query
+        required: true
+        schema:
+          type: string
+          description: Human readable quantity, such as "100.999"
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: pausable
+        in: query
+        required: false
+        schema:
+          type: boolean
+      - name: mintable
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae1_burn:
+    post:
+      tags:
+      - VendorField QAE1
+      summary: Generate VendorField JSON String for QAE1:BURN
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: quantity
+        in: query
+        required: true
+        schema:
+          type: string
+          description: Human readable quantity, such as "100.999"
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae1_mint:
+    post:
+      tags:
+      - VendorField QAE1
+      summary: Generate VendorField JSON String for QAE1:MINT
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: quantity
+        in: query
+        required: true
+        schema:
+          type: string
+          description: Human readable quantity, such as "100.999"
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae1_send:
+    post:
+      tags:
+      - VendorField QAE1
+      summary: Generate VendorField JSON String for QAE1:SEND
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: quantity
+        in: query
+        required: true
+        schema:
+          type: string
+          description: Human readable quantity, such as "100.999"
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae1_pause:
+    post:
+      tags:
+      - VendorField QAE1
+      summary: Generate VendorField JSON String for QAE1:PAUSE
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae1_resume:
+    post:
+      tags:
+      - VendorField QAE1
+      summary: Generate VendorField JSON String for QAE1:RESUME
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae1_newowner:
+    post:
+      tags:
+      - VendorField QAE1
+      summary: Generate VendorField JSON String for QAE1:NEWOWNER
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae1_freeze:
+    post:
+      tags:
+      - VendorField QAE1
+      summary: Generate VendorField JSON String for QAE1:FREEZE
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae1_unfreeze:
+    post:
+      tags:
+      - VendorField QAE1
+      summary: Generate VendorField JSON String for QAE1:UNFREEZE
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae2_genesis:
+    post:
+      tags:
+      - VendorField QAE2
+      summary: Generate VendorField JSON String for QAE2:GENESIS
+      parameters:
+      - name: symbol
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: name
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: uri
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: pausable
+        in: query
+        required: false
+        schema:
+          type: boolean
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'                
+  /vendor_qae2_pause:
+    post:
+      tags:
+      - VendorField QAE2
+      summary: Generate VendorField JSON String for QAE2:PAUSE
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae2_resume:
+    post:
+      tags:
+      - VendorField QAE2
+      summary: Generate VendorField JSON String for QAE2:RESUME
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae2_newowner:
+    post:
+      tags:
+      - VendorField QAE2
+      summary: Generate VendorField JSON String for QAE2:NEWOWNER
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae2_authmeta:
+    post:
+      tags:
+      - VendorField QAE2
+      summary: Generate VendorField JSON String for QAE2:AUTHMETA
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae2_revokemeta:
+    post:
+      tags:
+      - VendorField QAE2
+      summary: Generate VendorField JSON String for QAE2:REVOKEMETA
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae2_clone:
+    post:
+      tags:
+      - VendorField QAE2
+      summary: Generate VendorField JSON String for QAE2:CLONE
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: notes
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae2_addmeta:
+    post:
+      tags:
+      - VendorField QAE2
+      summary: Generate VendorField JSON String for QAE2:ADDMETA
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: chunk
+        in: query
+        required: false
+        schema:
+          type: integer
+      - name: name
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: data
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /vendor_qae2_voidmeta:
+    post:
+      tags:
+      - VendorField QAE2
+      summary: Generate VendorField JSON String for QAE2:VOIDMETA
+      parameters:
+      - name: tokenid
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: transactionid
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Encoded JSON String
+          content:
+            application/json:
+              schema:
+                type: string
+                description: Stringified JSON to use in Vendor Field
+        400:
+          description: An Error Occurred
           content:
             application/json:
               schema:
@@ -790,7 +1411,7 @@ components:
             properties:
               schema:
                 $ref: '#/components/schemas/MetaData'
-    Address:
+    AddressQAE1:
       type: object
       properties:
         schema_version:
@@ -814,6 +1435,33 @@ components:
         tokenDecimals: 
           type: integer
           description: Number of decimals the token has
+        lastUpdatedBlock:
+          type: integer
+          description: Last transaction block height for this record
+        isActive:
+          type: boolean
+          description: Is active for sending
+    AddressQAE2:
+      type: object
+      properties:
+        schema_version:
+          type: integer
+          description: Schema Version
+        recordId: 
+          type: string
+          description: Unique record id for address/tokenid
+        address: 
+          type: string
+          description: Qredit address
+        tokenIdHex: 
+          type: string
+          description: Token ID
+        isOwner: 
+          type: boolean
+          description: Is token owner
+        isMetaAuth: 
+          type: boolean
+          description: Can address add metadata to token
         lastUpdatedBlock:
           type: integer
           description: Last transaction block height for this record
