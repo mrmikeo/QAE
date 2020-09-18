@@ -218,7 +218,7 @@ VOIDMETA:   (Recipient Address is QAE Master - QjeTQp29p9xRvTcoox4chc6jQZAHwq87J
 
 ```
 id = tokenIdHex (Hexidecimal)
-ch = Chunk number (Integer - Optional / 0 is Default -- If your metadata cannot fit into a single transaction, then chunk it into multiple, ie, 1 of 2, 2 of 2)
-na = Name  (String: Max 32 Characters --  name of meta info)
-dt = Data  (String -- stringified data for your meta)
+tx = transaction id of metadata to void
+
+* Notes:  Only owner can void all meta.  Meta auth users can only void their own meta posts
 ```
