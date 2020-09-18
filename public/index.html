@@ -11,6 +11,17 @@
         
 			document.addEventListener("DOMContentLoaded", function(event) { 
 
+				function HideTopbarPlugin() {
+					// this plugin overrides the Topbar component to return nothing
+					return {
+						components: {
+							Topbar: function () {
+								return null;
+							}
+						}
+					}
+				}
+
 				const ui = SwaggerUIBundle({
 					url: "/qae_openapi3.yaml",
 					dom_id: '#swagger-ui',
