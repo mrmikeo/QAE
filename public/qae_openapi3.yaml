@@ -141,7 +141,7 @@ paths:
         required: true
         schema:
           type: string
-          description:  Token ID Hex
+        description:  Token ID Hex
       responses:
         200:
           description: Token Information
@@ -166,7 +166,7 @@ paths:
         required: true
         schema:
           type: string
-          description:  Transaction ID of genesis
+        description:  Transaction ID of genesis
       responses:
         200:
           description: Token Information
@@ -191,7 +191,7 @@ paths:
         required: true
         schema:
           type: string
-          description:  Qredit address
+        description:  Qredit address
       responses:
         200:
           description: Token Information
@@ -218,7 +218,7 @@ paths:
         required: true
         schema:
           type: string
-          description:  Token ID Hex
+        description:  Token ID Hex
       responses:
         200:
           description: Token Information
@@ -276,7 +276,7 @@ paths:
         required: true
         schema:
           type: string
-          description:  Qredit address
+        description:  Qredit address
       responses:
         200:
           description: Address List
@@ -305,7 +305,7 @@ paths:
         required: true
         schema:
           type: string
-          description:  Token ID Hex
+        description:  Token ID Hex
       responses:
         200:
           description: Address List
@@ -334,13 +334,13 @@ paths:
         required: true
         schema:
           type: string
-          description:  Token ID Hex
+        description:  Token ID Hex
       - name: address
         in: path
         required: true
         schema:
           type: string
-          description:  Qredit Address
+        description:  Qredit Address
       responses:
         200:
           description: Balance
@@ -366,7 +366,7 @@ paths:
         required: true
         schema:
           type: string
-          description:  Transaction ID
+        description:  Transaction ID
       responses:
         200:
           description: Transaction Information
@@ -393,7 +393,7 @@ paths:
         required: true
         schema:
           type: string
-          description:  Token ID
+        description:  Token ID
       responses:
         200:
           description: Transaction List
@@ -422,13 +422,13 @@ paths:
         required: true
         schema:
           type: string
-          description:  Token ID
+        description:  Token ID
       - name: address
         in: path
         required: true
         schema:
           type: string
-          description:  Qredit Address
+        description:  Qredit Address
       responses:
         200:
           description: Transaction List
@@ -490,7 +490,7 @@ paths:
         required: true
         schema:
           type: string
-          description:  Transaction ID of transaction containing metadata
+        description:  Transaction ID of transaction containing metadata
       responses:
         200:
           description: MetaData Information
@@ -517,7 +517,7 @@ paths:
         required: true
         schema:
           type: string
-          description:  Token ID hexcode to get metadata for
+        description:  Token ID hexcode to get metadata for
       - name: limit
         in: query
         required: false
@@ -554,13 +554,13 @@ paths:
         required: true
         schema:
           type: string
-          description:  Token ID hexcode to get metadata for
+        description:  Token ID hexcode to get metadata for
       - name: address
         in: path
         required: true
         schema:
           type: string
-          description:  Qredit address of the metadata poster
+        description:  Qredit address of the metadata poster
       - name: limit
         in: query
         required: false
@@ -587,7 +587,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae1_genesis:
-    post:
+    get:
       tags:
       - VendorField QAE1
       summary: Generate VendorField JSON String for QAE1:GENESIS
@@ -597,7 +597,7 @@ paths:
         required: true
         schema:
           type: integer
-          description: Number of decimal places the token has
+        description: Number of decimal places the token has
       - name: symbol
         in: query
         required: true
@@ -618,7 +618,7 @@ paths:
         required: true
         schema:
           type: string
-          description: Human readable quantity, such as "100.999"
+        description: Human readable quantity, such as "100.999"
       - name: notes
         in: query
         required: false
@@ -649,7 +649,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae1_burn:
-    post:
+    get:
       tags:
       - VendorField QAE1
       summary: Generate VendorField JSON String for QAE1:BURN
@@ -664,7 +664,7 @@ paths:
         required: true
         schema:
           type: string
-          description: Human readable quantity, such as "100.999"
+        description: Human readable quantity, such as "100.999"
       - name: notes
         in: query
         required: false
@@ -685,7 +685,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae1_mint:
-    post:
+    get:
       tags:
       - VendorField QAE1
       summary: Generate VendorField JSON String for QAE1:MINT
@@ -700,7 +700,7 @@ paths:
         required: true
         schema:
           type: string
-          description: Human readable quantity, such as "100.999"
+        description: Human readable quantity, such as "100.999"
       - name: notes
         in: query
         required: false
@@ -721,7 +721,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae1_send:
-    post:
+    get:
       tags:
       - VendorField QAE1
       summary: Generate VendorField JSON String for QAE1:SEND
@@ -736,7 +736,7 @@ paths:
         required: true
         schema:
           type: string
-          description: Human readable quantity, such as "100.999"
+        description: Human readable quantity, such as "100.999"
       - name: notes
         in: query
         required: false
@@ -757,7 +757,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae1_pause:
-    post:
+    get:
       tags:
       - VendorField QAE1
       summary: Generate VendorField JSON String for QAE1:PAUSE
@@ -787,7 +787,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae1_resume:
-    post:
+    get:
       tags:
       - VendorField QAE1
       summary: Generate VendorField JSON String for QAE1:RESUME
@@ -817,7 +817,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae1_newowner:
-    post:
+    get:
       tags:
       - VendorField QAE1
       summary: Generate VendorField JSON String for QAE1:NEWOWNER
@@ -847,7 +847,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae1_freeze:
-    post:
+    get:
       tags:
       - VendorField QAE1
       summary: Generate VendorField JSON String for QAE1:FREEZE
@@ -877,7 +877,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae1_unfreeze:
-    post:
+    get:
       tags:
       - VendorField QAE1
       summary: Generate VendorField JSON String for QAE1:UNFREEZE
@@ -907,7 +907,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae2_genesis:
-    post:
+    get:
       tags:
       - VendorField QAE2
       summary: Generate VendorField JSON String for QAE2:GENESIS
@@ -952,7 +952,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'                
   /vendor_qae2_pause:
-    post:
+    get:
       tags:
       - VendorField QAE2
       summary: Generate VendorField JSON String for QAE2:PAUSE
@@ -982,7 +982,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae2_resume:
-    post:
+    get:
       tags:
       - VendorField QAE2
       summary: Generate VendorField JSON String for QAE2:RESUME
@@ -1012,7 +1012,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae2_newowner:
-    post:
+    get:
       tags:
       - VendorField QAE2
       summary: Generate VendorField JSON String for QAE2:NEWOWNER
@@ -1042,7 +1042,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae2_authmeta:
-    post:
+    get:
       tags:
       - VendorField QAE2
       summary: Generate VendorField JSON String for QAE2:AUTHMETA
@@ -1072,7 +1072,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae2_revokemeta:
-    post:
+    get:
       tags:
       - VendorField QAE2
       summary: Generate VendorField JSON String for QAE2:REVOKEMETA
@@ -1102,7 +1102,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae2_clone:
-    post:
+    get:
       tags:
       - VendorField QAE2
       summary: Generate VendorField JSON String for QAE2:CLONE
@@ -1132,7 +1132,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae2_addmeta:
-    post:
+    get:
       tags:
       - VendorField QAE2
       summary: Generate VendorField JSON String for QAE2:ADDMETA
@@ -1172,7 +1172,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   /vendor_qae2_voidmeta:
-    post:
+    get:
       tags:
       - VendorField QAE2
       summary: Generate VendorField JSON String for QAE2:VOIDMETA
