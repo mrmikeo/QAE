@@ -1459,7 +1459,7 @@ router.route('/vendor_qae2_genesis')
 	
 		updateaccessstats(req);
 		
-		var requiredfields = ['symbol','name';
+		var requiredfields = ['symbol','name'];
 		
 		for (let i = 0; i < requiredfields.length; i++)
 		{
