@@ -27,6 +27,7 @@ const {promisify} = require('util');			 // Promise functions
 const asyncv3	  = require('async');			 // Async Helper
 const { Client }  = require('pg');				 // Postgres
 const qreditjs	  = require("qreditjs");
+const path 		  = require('path');
 
 var iniconfig = ini.parse(fs.readFileSync('/etc/qae/qae.ini', 'utf-8'))
 
