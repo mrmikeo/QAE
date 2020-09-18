@@ -990,16 +990,16 @@ router.route('/vendor_qae1_genesis')
 			jsonobject.qae1.qt = neweamount;
 		
 			if (req.query.uri)
-				jsonobject.qae1.du = req.body.uri;
+				jsonobject.qae1.du = req.query.uri;
 			
 			if (req.query.notes)	
-				jsonobject.qae1.no = req.body.notes;
+				jsonobject.qae1.no = req.query.notes;
 		
 			if (req.query.pa)
-				jsonobject.qae1.pa = req.body.pausable;
+				jsonobject.qae1.pa = req.query.pausable;
 		
 			if (req.query.mi)
-				jsonobject.qae1.mi = req.body.mintable;
+				jsonobject.qae1.mi = req.query.mintable;
 				
 			res.status(200).send(JSON.stringify(jsonobject));
 			
@@ -1062,7 +1062,7 @@ router.route('/vendor_qae1_burn')
 				jsonobject.qae1.qt = neweamount;
 		
 				if (req.query.notes)	
-					jsonobject.qae1.no = req.body.notes;
+					jsonobject.qae1.no = req.query.notes;
 				
 				res.status(200).send(JSON.stringify(jsonobject));
 			
@@ -1127,7 +1127,7 @@ router.route('/vendor_qae1_mint')
 				jsonobject.qae1.qt = neweamount;
 		
 				if (req.query.notes)	
-					jsonobject.qae1.no = req.body.notes;
+					jsonobject.qae1.no = req.query.notes;
 				
 				res.status(200).send(JSON.stringify(jsonobject));
 			
@@ -1192,7 +1192,7 @@ router.route('/vendor_qae1_send')
 				jsonobject.qae1.qt = neweamount;
 		
 				if (req.query.notes)	
-					jsonobject.qae1.no = req.body.notes;
+					jsonobject.qae1.no = req.query.notes;
 				
 				res.status(200).send(JSON.stringify(jsonobject));
 			
@@ -1241,7 +1241,7 @@ router.route('/vendor_qae1_pause')
 				jsonobject.qae1.id = req.query.tokenid;
 		
 				if (req.query.notes)	
-					jsonobject.qae1.no = req.body.notes;
+					jsonobject.qae1.no = req.query.notes;
 				
 				res.status(200).send(JSON.stringify(jsonobject));
 			
@@ -1290,7 +1290,7 @@ router.route('/vendor_qae1_resume')
 				jsonobject.qae1.id = req.query.tokenid;
 		
 				if (req.query.notes)	
-					jsonobject.qae1.no = req.body.notes;
+					jsonobject.qae1.no = req.query.notes;
 				
 				res.status(200).send(JSON.stringify(jsonobject));
 			
@@ -1339,7 +1339,7 @@ router.route('/vendor_qae1_newowner')
 				jsonobject.qae1.id = req.query.tokenid;
 		
 				if (req.query.notes)	
-					jsonobject.qae1.no = req.body.notes;
+					jsonobject.qae1.no = req.query.notes;
 				
 				res.status(200).send(JSON.stringify(jsonobject));
 			
@@ -1388,7 +1388,7 @@ router.route('/vendor_qae1_freeze')
 				jsonobject.qae1.id = req.query.tokenid;
 		
 				if (req.query.notes)	
-					jsonobject.qae1.no = req.body.notes;
+					jsonobject.qae1.no = req.query.notes;
 				
 				res.status(200).send(JSON.stringify(jsonobject));
 			
@@ -1437,7 +1437,453 @@ router.route('/vendor_qae1_unfreeze')
 				jsonobject.qae1.id = req.query.tokenid;
 		
 				if (req.query.notes)	
-					jsonobject.qae1.no = req.body.notes;
+					jsonobject.qae1.no = req.query.notes;
+				
+				res.status(200).send(JSON.stringify(jsonobject));
+			
+			} catch (e) {
+
+				message = {error: {code: 400, message: 'Unknown Error', description: 'Check your inputs to ensure they are properly formatted.'}};
+				res.status(400).json(message);
+		
+			}
+		
+		})();
+		
+	});
+	
+// qae 2
+
+router.route('/vendor_qae2_genesis')
+	.get(function(req, res) {
+	
+		updateaccessstats(req);
+		
+		var requiredfields = ['symbol','name';
+		
+		for (let i = 0; i < requiredfields.length; i++)
+		{
+		
+			var fieldname = requiredfields[i];
+
+			if (!req.query[fieldname])
+			{
+
+				message = {error: {code: 10001, message: 'Validation Error', description: 'Missing "' + fieldname + '" field.'}};
+				res.status(400).json(message);
+				
+				break;
+						
+			}
+		
+		}
+		
+		try {
+		
+			var jsonobject = {qae2:{}};
+		
+			jsonobject.qae2.tp = "GENESIS";
+			jsonobject.qae2.sy = req.query.symbol;
+			jsonobject.qae2.na = req.query.name;
+		
+			if (req.query.uri)
+				jsonobject.qae2.du = req.query.uri;
+			
+			if (req.query.notes)	
+				jsonobject.qae2.no = req.query.notes;
+		
+			if (req.query.pa)
+				jsonobject.qae2.pa = req.query.pausable;
+				
+			res.status(200).send(JSON.stringify(jsonobject));
+			
+		} catch (e) {
+
+			message = {error: {code: 400, message: 'Unknown Error', description: 'Check your inputs to ensure they are properly formatted.'}};
+			res.status(400).json(message);
+		
+		}
+		
+	});
+	
+router.route('/vendor_qae2_pause')
+	.get(function(req, res) {
+	
+		updateaccessstats(req);
+		
+		var requiredfields = ['tokenid'];
+		
+		for (let i = 0; i < requiredfields.length; i++)
+		{
+		
+			var fieldname = requiredfields[i];
+
+			if (!req.query[fieldname])
+			{
+
+				message = {error: {code: 10001, message: 'Validation Error', description: 'Missing "' + fieldname + '" field.'}};
+				res.status(400).json(message);
+				
+				break;
+						
+			}
+		
+		}
+		
+		(async () => {
+		
+			try {
+		
+				var jsonobject = {qae2:{}};
+		
+				jsonobject.qae2.tp = "PAUSE";
+				jsonobject.qae2.id = req.query.tokenid;
+		
+				if (req.query.notes)	
+					jsonobject.qae2.no = req.query.notes;
+				
+				res.status(200).send(JSON.stringify(jsonobject));
+			
+			} catch (e) {
+
+				message = {error: {code: 400, message: 'Unknown Error', description: 'Check your inputs to ensure they are properly formatted.'}};
+				res.status(400).json(message);
+		
+			}
+		
+		})();
+		
+	});
+
+router.route('/vendor_qae2_resume')
+	.get(function(req, res) {
+	
+		updateaccessstats(req);
+		
+		var requiredfields = ['tokenid'];
+		
+		for (let i = 0; i < requiredfields.length; i++)
+		{
+		
+			var fieldname = requiredfields[i];
+
+			if (!req.query[fieldname])
+			{
+
+				message = {error: {code: 10001, message: 'Validation Error', description: 'Missing "' + fieldname + '" field.'}};
+				res.status(400).json(message);
+				
+				break;
+						
+			}
+		
+		}
+		
+		(async () => {
+		
+			try {
+		
+				var jsonobject = {qae2:{}};
+		
+				jsonobject.qae2.tp = "RESUME";
+				jsonobject.qae2.id = req.query.tokenid;
+		
+				if (req.query.notes)	
+					jsonobject.qae2.no = req.query.notes;
+				
+				res.status(200).send(JSON.stringify(jsonobject));
+			
+			} catch (e) {
+
+				message = {error: {code: 400, message: 'Unknown Error', description: 'Check your inputs to ensure they are properly formatted.'}};
+				res.status(400).json(message);
+		
+			}
+		
+		})();
+		
+	});
+	
+router.route('/vendor_qae2_newowner')
+	.get(function(req, res) {
+	
+		updateaccessstats(req);
+		
+		var requiredfields = ['tokenid'];
+		
+		for (let i = 0; i < requiredfields.length; i++)
+		{
+		
+			var fieldname = requiredfields[i];
+
+			if (!req.query[fieldname])
+			{
+
+				message = {error: {code: 10001, message: 'Validation Error', description: 'Missing "' + fieldname + '" field.'}};
+				res.status(400).json(message);
+				
+				break;
+						
+			}
+		
+		}
+		
+		(async () => {
+		
+			try {
+		
+				var jsonobject = {qae2:{}};
+		
+				jsonobject.qae2.tp = "NEWOWNER";
+				jsonobject.qae2.id = req.query.tokenid;
+		
+				if (req.query.notes)	
+					jsonobject.qae2.no = req.query.notes;
+				
+				res.status(200).send(JSON.stringify(jsonobject));
+			
+			} catch (e) {
+
+				message = {error: {code: 400, message: 'Unknown Error', description: 'Check your inputs to ensure they are properly formatted.'}};
+				res.status(400).json(message);
+		
+			}
+		
+		})();
+		
+	});
+
+router.route('/vendor_qae2_authmeta')
+	.get(function(req, res) {
+	
+		updateaccessstats(req);
+		
+		var requiredfields = ['tokenid'];
+		
+		for (let i = 0; i < requiredfields.length; i++)
+		{
+		
+			var fieldname = requiredfields[i];
+
+			if (!req.query[fieldname])
+			{
+
+				message = {error: {code: 10001, message: 'Validation Error', description: 'Missing "' + fieldname + '" field.'}};
+				res.status(400).json(message);
+				
+				break;
+						
+			}
+		
+		}
+		
+		(async () => {
+		
+			try {
+		
+				var jsonobject = {qae2:{}};
+		
+				jsonobject.qae2.tp = "AUTHMETA";
+				jsonobject.qae2.id = req.query.tokenid;
+		
+				if (req.query.notes)	
+					jsonobject.qae2.no = req.query.notes;
+				
+				res.status(200).send(JSON.stringify(jsonobject));
+			
+			} catch (e) {
+
+				message = {error: {code: 400, message: 'Unknown Error', description: 'Check your inputs to ensure they are properly formatted.'}};
+				res.status(400).json(message);
+		
+			}
+		
+		})();
+		
+	});
+
+router.route('/vendor_qae2_revokemeta')
+	.get(function(req, res) {
+	
+		updateaccessstats(req);
+		
+		var requiredfields = ['tokenid'];
+		
+		for (let i = 0; i < requiredfields.length; i++)
+		{
+		
+			var fieldname = requiredfields[i];
+
+			if (!req.query[fieldname])
+			{
+
+				message = {error: {code: 10001, message: 'Validation Error', description: 'Missing "' + fieldname + '" field.'}};
+				res.status(400).json(message);
+				
+				break;
+						
+			}
+		
+		}
+		
+		(async () => {
+		
+			try {
+		
+				var jsonobject = {qae2:{}};
+		
+				jsonobject.qae2.tp = "REVOKEMETA";
+				jsonobject.qae2.id = req.query.tokenid;
+		
+				if (req.query.notes)	
+					jsonobject.qae2.no = req.query.notes;
+				
+				res.status(200).send(JSON.stringify(jsonobject));
+			
+			} catch (e) {
+
+				message = {error: {code: 400, message: 'Unknown Error', description: 'Check your inputs to ensure they are properly formatted.'}};
+				res.status(400).json(message);
+		
+			}
+		
+		})();
+		
+	});
+
+router.route('/vendor_qae2_clone')
+	.get(function(req, res) {
+	
+		updateaccessstats(req);
+		
+		var requiredfields = ['tokenid'];
+		
+		for (let i = 0; i < requiredfields.length; i++)
+		{
+		
+			var fieldname = requiredfields[i];
+
+			if (!req.query[fieldname])
+			{
+
+				message = {error: {code: 10001, message: 'Validation Error', description: 'Missing "' + fieldname + '" field.'}};
+				res.status(400).json(message);
+				
+				break;
+						
+			}
+		
+		}
+		
+		(async () => {
+		
+			try {
+		
+				var jsonobject = {qae2:{}};
+		
+				jsonobject.qae2.tp = "CLONE";
+				jsonobject.qae2.id = req.query.tokenid;
+		
+				if (req.query.notes)	
+					jsonobject.qae2.no = req.query.notes;
+				
+				res.status(200).send(JSON.stringify(jsonobject));
+			
+			} catch (e) {
+
+				message = {error: {code: 400, message: 'Unknown Error', description: 'Check your inputs to ensure they are properly formatted.'}};
+				res.status(400).json(message);
+		
+			}
+		
+		})();
+		
+	});
+
+router.route('/vendor_qae2_addmeta')
+	.get(function(req, res) {
+	
+		updateaccessstats(req);
+		
+		var requiredfields = ['tokenid', 'name', 'data'];
+		
+		for (let i = 0; i < requiredfields.length; i++)
+		{
+		
+			var fieldname = requiredfields[i];
+
+			if (!req.query[fieldname])
+			{
+
+				message = {error: {code: 10001, message: 'Validation Error', description: 'Missing "' + fieldname + '" field.'}};
+				res.status(400).json(message);
+				
+				break;
+						
+			}
+		
+		}
+		
+		(async () => {
+		
+			try {
+		
+				var jsonobject = {qae2:{}};
+		
+				jsonobject.qae2.tp = "ADDMETA";
+				jsonobject.qae2.id = req.query.tokenid;
+				jsonobject.qae2.na = req.query.name;
+				jsonobject.qae2.dt = req.query.data;
+		
+				if (req.query.chunk)	
+					jsonobject.qae2.ch = req.query.chunk;
+				
+				res.status(200).send(JSON.stringify(jsonobject));
+			
+			} catch (e) {
+
+				message = {error: {code: 400, message: 'Unknown Error', description: 'Check your inputs to ensure they are properly formatted.'}};
+				res.status(400).json(message);
+		
+			}
+		
+		})();
+		
+	});
+
+router.route('/vendor_qae2_voidmeta')
+	.get(function(req, res) {
+	
+		updateaccessstats(req);
+		
+		var requiredfields = ['tokenid','txid'];
+		
+		for (let i = 0; i < requiredfields.length; i++)
+		{
+		
+			var fieldname = requiredfields[i];
+
+			if (!req.query[fieldname])
+			{
+
+				message = {error: {code: 10001, message: 'Validation Error', description: 'Missing "' + fieldname + '" field.'}};
+				res.status(400).json(message);
+				
+				break;
+						
+			}
+		
+		}
+		
+		(async () => {
+		
+			try {
+		
+				var jsonobject = {qae2:{}};
+		
+				jsonobject.qae2.tp = "VOIDMETA";
+				jsonobject.qae2.id = req.query.tokenid;
+				jsonobject.qae2.tx = req.query.transactionid;
 				
 				res.status(200).send(JSON.stringify(jsonobject));
 			
